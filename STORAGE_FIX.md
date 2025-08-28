@@ -6,72 +6,90 @@
 Storage upload error: new row violates row-level security policy
 ```
 
-## 解决方案
+## 解决方案 - 通过UI界面操作
 
-### 步骤1：登录Supabase Dashboard
-访问 https://supabase.com/dashboard/project/[你的项目ID]/storage/buckets
+### 步骤1：创建存储桶
+1. 登录 Supabase Dashboard
+2. 访问：https://supabase.com/dashboard/project/[你的项目ID]/storage/buckets
+3. 点击 "New bucket" 创建两个桶：
 
-### 步骤2：创建存储桶
-如果还没有创建，需要创建以下两个存储桶：
+**创建 pet-originals 桶：**
+- Name: `pet-originals`  
+- ❌ 不勾选 "Public bucket" (保持私有)
+- 点击 "Create bucket"
 
-1. **pet-originals** (私有桶)
-   - 用途：存储用户上传的原始宠物照片
-   - 设置：Private (不勾选 "Public bucket")
-   
-2. **pet-results** (公开桶)
-   - 用途：存储AI生成的结果图片
-   - 设置：Public (勾选 "Public bucket")
+**创建 pet-results 桶：**
+- Name: `pet-results`
+- ✅ 勾选 "Public bucket" (设为公开)
+- 点击 "Create bucket"
 
-### 步骤3：设置RLS策略
-1. 进入 SQL Editor: https://supabase.com/dashboard/project/[你的项目ID]/sql
-2. 执行以下SQL代码：
+### 步骤2：设置Storage策略（通过UI界面）
 
+#### 为 pet-originals 设置策略：
+1. 点击 `pet-originals` 桶
+2. 进入 "Policies" 标签页
+3. 点击 "New policy"
+4. 选择 "Custom" 模板
+5. 创建以下策略：
+
+**策略1: 允许用户上传到自己的文件夹**
+- Policy name: `Users can upload own files`
+- Allowed operation: `INSERT`
+- Target roles: `authenticated`
+- USING expression: 
 ```sql
--- 确保存储对象表启用RLS
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+auth.uid()::text = (storage.foldername(name))[1]
+```
 
--- 删除可能存在的旧策略（如果有）
-DROP POLICY IF EXISTS "Users can upload to pet-originals" ON storage.objects;
-DROP POLICY IF EXISTS "Users can view own files in pet-originals" ON storage.objects;
-DROP POLICY IF EXISTS "Users can delete own files in pet-originals" ON storage.objects;
-DROP POLICY IF EXISTS "Users can upload to pet-results" ON storage.objects;
-DROP POLICY IF EXISTS "Anyone can view pet-results" ON storage.objects;
-DROP POLICY IF EXISTS "Users can delete own files in pet-results" ON storage.objects;
+**策略2: 允许用户查看自己的文件**
+- Policy name: `Users can view own files`  
+- Allowed operation: `SELECT`
+- Target roles: `authenticated`
+- USING expression:
+```sql
+auth.uid()::text = (storage.foldername(name))[1]
+```
 
--- 为 pet-originals 存储桶设置策略
-CREATE POLICY "Users can upload to pet-originals" ON storage.objects
-FOR INSERT WITH CHECK (
-  bucket_id = 'pet-originals' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
+**策略3: 允许用户删除自己的文件**
+- Policy name: `Users can delete own files`
+- Allowed operation: `DELETE`  
+- Target roles: `authenticated`
+- USING expression:
+```sql
+auth.uid()::text = (storage.foldername(name))[1]
+```
 
-CREATE POLICY "Users can view own files in pet-originals" ON storage.objects
-FOR SELECT USING (
-  bucket_id = 'pet-originals' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
+#### 为 pet-results 设置策略：
+1. 点击 `pet-results` 桶
+2. 进入 "Policies" 标签页  
+3. 点击 "New policy"
+4. 创建以下策略：
 
-CREATE POLICY "Users can delete own files in pet-originals" ON storage.objects
-FOR DELETE USING (
-  bucket_id = 'pet-originals' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
+**策略1: 允许用户上传到自己的文件夹**
+- Policy name: `Users can upload own files`
+- Allowed operation: `INSERT`
+- Target roles: `authenticated`
+- USING expression:
+```sql
+auth.uid()::text = (storage.foldername(name))[1]
+```
 
--- 为 pet-results 存储桶设置策略
-CREATE POLICY "Users can upload to pet-results" ON storage.objects
-FOR INSERT WITH CHECK (
-  bucket_id = 'pet-results' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
+**策略2: 允许所有人查看文件（公开桶）**
+- Policy name: `Anyone can view files`
+- Allowed operation: `SELECT`  
+- Target roles: `authenticated`, `anon`
+- USING expression:
+```sql
+true
+```
 
-CREATE POLICY "Anyone can view pet-results" ON storage.objects
-FOR SELECT USING (bucket_id = 'pet-results');
-
-CREATE POLICY "Users can delete own files in pet-results" ON storage.objects
-FOR DELETE USING (
-  bucket_id = 'pet-results' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
+**策略3: 允许用户删除自己的文件**
+- Policy name: `Users can delete own files`
+- Allowed operation: `DELETE`
+- Target roles: `authenticated`  
+- USING expression:
+```sql
+auth.uid()::text = (storage.foldername(name))[1]
 ```
 
 ### 步骤4：验证修复

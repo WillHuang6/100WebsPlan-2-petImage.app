@@ -1,55 +1,14 @@
 -- Supabase Storage RLS 策略设置
--- 需要在Supabase SQL编辑器中执行
+-- 注意：不要在SQL编辑器中执行此文件！
+-- Storage策略需要通过Dashboard UI设置
 
--- 1. 创建存储桶（如果还没有创建）
--- 这些需要在Supabase Dashboard > Storage 中手动创建：
--- - pet-originals (私有桶) - 存储用户上传的原始宠物照片
--- - pet-results (公开桶) - 存储AI生成的结果图片
+-- 此文件仅供参考，实际操作请按照 STORAGE_FIX.md 中的UI操作步骤
 
--- 注意：创建桶时的设置
--- pet-originals: Private (不公开访问)
--- pet-results: Public (允许公开访问)
+-- 文件路径结构参考：
+-- pet-originals/[user-id]/[generation-id]/original.jpg
+-- pet-results/[user-id]/[generation-id]/result.jpg
 
--- 2. 为 pet-originals 存储桶设置RLS策略
--- 允许已登录用户上传文件到自己的文件夹
-CREATE POLICY "Users can upload to pet-originals" ON storage.objects
-FOR INSERT WITH CHECK (
-  bucket_id = 'pet-originals' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-
--- 允许已登录用户查看自己的文件
-CREATE POLICY "Users can view own files in pet-originals" ON storage.objects
-FOR SELECT USING (
-  bucket_id = 'pet-originals' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-
--- 允许已登录用户删除自己的文件  
-CREATE POLICY "Users can delete own files in pet-originals" ON storage.objects
-FOR DELETE USING (
-  bucket_id = 'pet-originals' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-
--- 3. 为 pet-results 存储桶设置RLS策略
--- 允许已登录用户上传文件到自己的文件夹
-CREATE POLICY "Users can upload to pet-results" ON storage.objects
-FOR INSERT WITH CHECK (
-  bucket_id = 'pet-results' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-
--- 允许所有人查看结果图片（因为这是公开桶）
-CREATE POLICY "Anyone can view pet-results" ON storage.objects
-FOR SELECT USING (bucket_id = 'pet-results');
-
--- 允许已登录用户删除自己的结果文件
-CREATE POLICY "Users can delete own files in pet-results" ON storage.objects
-FOR DELETE USING (
-  bucket_id = 'pet-results' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-
--- 4. 确保存储桶的RLS是启用的
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- 策略逻辑参考：
+-- 1. 用户只能操作自己用户ID文件夹下的文件
+-- 2. pet-originals: 私有桶，用户只能访问自己的文件  
+-- 3. pet-results: 公开桶，所有人可以查看，但只能删除自己的文件

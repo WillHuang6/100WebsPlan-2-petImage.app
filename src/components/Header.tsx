@@ -1,21 +1,25 @@
 import React from 'react'
+import Image from 'next/image'
 
 export const Header: React.FC = () => {
   return (
     <section className="text-center mb-8">
       {/* Logo and Brand */}
-      <div className="flex items-center justify-center mb-4">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-orange-400 flex items-center justify-center mr-3 shadow-lg">
-          <span className="text-white font-bold text-xl">❤️</span>
+      <div className="flex items-center justify-center mb-6">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-orange-400 flex items-center justify-center mr-3 shadow-lg p-0.5">
+          <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+            <Image
+              src="/images/logo.png"
+              alt="PetImage Logo"
+              width={32}
+              height={32}
+              className="object-cover"
+            />
+          </div>
         </div>
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
           Pet<span className="bg-gradient-to-r from-rose-500 via-pink-500 to-orange-500 bg-clip-text text-transparent">Image</span>
         </h1>
-      </div>
-
-      {/* Warm Welcome Message */}
-      <div className="mb-3">
-        <p className="text-base text-rose-600 font-medium">💕 Made with love for pet parents 💕</p>
       </div>
 
       {/* Main Headline */}

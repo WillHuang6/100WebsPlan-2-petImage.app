@@ -1,18 +1,8 @@
 import { NextResponse } from 'next/server';
-import { creem } from '@/lib/creem';
 
 export async function GET() {
   try {
-    const apiKey = process.env.CREEM_API_KEY;
-    
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'CREEM_API_KEY 未配置' },
-        { status: 500 }
-      );
-    }
-
-    // 使用你在 Creem 中创建的实际产品
+    // 使用你在 Creem 中创建的实际产品信息
     const products = [
       {
         id: 'prod_2YRPVlkhs0lCrdOgVQomZT',

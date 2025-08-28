@@ -32,9 +32,17 @@ export default function PricingPage() {
     try {
       const response = await fetch('/api/creem/products');
       const data = await response.json();
-      setProducts(data);
+      
+      // 检查响应是否成功且数据是数组
+      if (response.ok && Array.isArray(data)) {
+        setProducts(data);
+      } else {
+        console.error('API 响应错误:', data);
+        setProducts([]); // 设置为空数组避免 map 错误
+      }
     } catch (error) {
       console.error('获取产品失败:', error);
+      setProducts([]); // 设置为空数组避免 map 错误
     } finally {
       setLoading(false);
     }

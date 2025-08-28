@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-client'
+import { createAdminClient } from '@/lib/supabase-server'
 
 // 上传文件到Supabase Storage
 export async function uploadToStorage(
@@ -6,7 +7,8 @@ export async function uploadToStorage(
   bucket: string,
   path: string
 ): Promise<{ url: string | null; error: string | null }> {
-  const supabase = createClient()
+  // 使用管理员客户端绕过RLS
+  const supabase = createAdminClient()
   
   try {
     const { data, error } = await supabase.storage

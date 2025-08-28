@@ -59,93 +59,64 @@ export async function POST(request: NextRequest) {
       metadata: { email: userEmail, userId }
     });
 
-    // 尝试多种可能的 Creem API 端点
-    let creemResponse;
-    let lastError = '';
-    
-    const endpoints = [
-      'https://api.creem.io/v1/checkout',
-      'https://api.creem.io/v1/checkout/session',
-      'https://api.creem.io/checkout/create',
-      'https://api.creem.io/checkout',
-    ];
+    // 使用Creem文档中的正确API格式
+    console.log('使用官方文档的API格式...');
     
     const requestBody = {
-      productId,
-      successUrl,
-      cancelUrl: 'https://100-webs-plan-2-pet-image-app.vercel.app/pricing',
-      customerEmail: userEmail,
-      metadata: {
-        email: userEmail,
-        userId,
-        requestId: userId,
-      },
+      product_id: productId,  // 使用下划线格式
+      request_id: userId,     // 可选的追踪ID
+      success_url: successUrl, // 自定义成功页面
     };
     
-    console.log('尝试的请求体:', requestBody);
+    console.log('请求体:', requestBody);
     
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`尝试端点: ${endpoint}`);
-        
-        creemResponse = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-            'X-API-Key': apiKey,
-          },
-          body: JSON.stringify(requestBody),
-        });
-        
-        console.log(`端点 ${endpoint} 响应状态:`, creemResponse.status);
-        
-        if (creemResponse.ok) {
-          console.log(`成功！使用端点: ${endpoint}`);
-          break;
-        } else {
-          const errorText = await creemResponse.text();
-          console.log(`端点 ${endpoint} 失败:`, errorText);
-          lastError = errorText;
-          creemResponse = null;
-        }
-      } catch (fetchError) {
-        console.log(`端点 ${endpoint} 请求失败:`, fetchError);
-        lastError = fetchError instanceof Error ? fetchError.message : '网络错误';
-        creemResponse = null;
-      }
-    }
+    const creemResponse = await fetch('https://api.creem.io/v1/checkouts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,  // 使用文档中指定的header格式
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    console.log('Creem API 响应状态:', creemResponse.status);
 
-    if (!creemResponse) {
-      console.log('所有REST API端点都失败了，最后错误:', lastError);
+    if (!creemResponse.ok) {
+      const errorText = await creemResponse.text();
+      console.log('Creem API 错误响应:', errorText);
       
-      // 作为最后的备选方案，返回一个模拟的结账URL用于测试
-      // 在生产环境中，这应该联系Creem支持获得正确的API端点
-      console.log('返回测试结账URL...');
-      
-      return NextResponse.json({ 
-        url: `https://creem.io/checkout?product=${productId}&email=${encodeURIComponent(userEmail)}&success=${encodeURIComponent(successUrl)}`,
-        note: '这是一个测试URL，需要Creem提供正确的API端点'
-      });
+      return NextResponse.json(
+        { 
+          error: 'Creem API 调用失败', 
+          details: errorText,
+          status: creemResponse.status
+        },
+        { status: 500 }
+      );
     }
 
     const checkoutSessionResponse = await creemResponse.json();
 
     console.log('Creem响应:', checkoutSessionResponse);
 
-    const checkoutUrl = checkoutSessionResponse.checkoutUrl || 
-                       (checkoutSessionResponse as any).url ||
-                       (checkoutSessionResponse as any).checkout_url;
+    // 根据文档，响应应该包含checkout URL
+    const checkoutUrl = checkoutSessionResponse.checkout_url || 
+                       checkoutSessionResponse.url ||
+                       checkoutSessionResponse.checkoutUrl;
 
     if (!checkoutUrl) {
       console.log('错误: 未获取到结账URL');
       console.log('完整响应:', JSON.stringify(checkoutSessionResponse, null, 2));
       return NextResponse.json(
-        { error: '未获取到结账URL' },
+        { 
+          error: '未获取到结账URL',
+          response: checkoutSessionResponse
+        },
         { status: 500 }
       );
     }
 
+    console.log('成功获取结账URL:', checkoutUrl);
     return NextResponse.json({ url: checkoutUrl });
   } catch (error) {
     console.error('创建结账会话失败:', error);

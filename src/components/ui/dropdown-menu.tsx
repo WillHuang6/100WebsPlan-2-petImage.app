@@ -107,7 +107,7 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
 
 interface DropdownMenuItemProps {
   children: React.ReactNode
-  onClick?: () => void
+  onClick?: (e?: React.MouseEvent) => void
   asChild?: boolean
   className?: string
 }
@@ -120,9 +120,10 @@ export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
 }) => {
   const { setIsOpen } = useContext(DropdownContext)
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    console.log('DropdownMenuItem handleClick called')
     if (onClick) {
-      onClick()
+      onClick(e)
     }
     setIsOpen(false)
   }

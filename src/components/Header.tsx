@@ -1,7 +1,13 @@
 import React from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useApp } from '@/contexts/AppContext'
 import { UserMenu } from '@/components/UserMenu'
+import { Button } from '@/components/ui/button'
 
 export const Header: React.FC = () => {
+  const { user } = useAuth()
+  const { openAuthModal } = useApp()
+
   return (
     <section className="text-center mb-16 relative">
       {/* Logo and Brand */}
@@ -52,9 +58,19 @@ export const Header: React.FC = () => {
         </p>
       </div>
 
-      {/* User Menu */}
+      {/* User Menu / Login Button */}
       <div className="absolute top-0 right-0">
-        <UserMenu />
+        {user ? (
+          <UserMenu />
+        ) : (
+          <Button
+            onClick={openAuthModal}
+            variant="outline"
+            className="bg-white/80 backdrop-blur-sm hover:bg-white border-rose-200 text-rose-700 hover:text-rose-800"
+          >
+            登录 / 注册
+          </Button>
+        )}
       </div>
     </section>
   )

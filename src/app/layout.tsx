@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { AppProvider } from '@/contexts/AppContext'
 import { AuthGuard } from '@/components/AuthGuard'
+import { AuthModalWrapper } from '@/components/AuthModalWrapper'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,9 +22,12 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className={inter.className}>
         <AuthProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
+          <AppProvider>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+            <AuthModalWrapper />
+          </AppProvider>
         </AuthProvider>
       </body>
     </html>

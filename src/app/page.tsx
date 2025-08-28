@@ -109,6 +109,8 @@ export default function Home() {
                     isDisabled={!canStartGeneration}
                     isLoading={isGenerating}
                     loadingProgress={generationProgress}
+                    selectedTemplate={selectedTemplate}
+                    selectedImage={selectedImage}
                   />
                 </div>
               </div>

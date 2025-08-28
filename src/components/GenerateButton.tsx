@@ -3,6 +3,8 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
+import { useApp } from '@/contexts/AppContext'
 
 interface GenerateButtonProps {
   onGenerate: () => void
@@ -10,6 +12,8 @@ interface GenerateButtonProps {
   isLoading?: boolean
   loadingProgress?: number
   className?: string
+  selectedTemplate?: string | null
+  selectedImage?: File | null
 }
 
 export const GenerateButton: React.FC<GenerateButtonProps> = ({
@@ -17,8 +21,31 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   isDisabled = false,
   isLoading = false,
   loadingProgress = 0,
-  className
+  className,
+  selectedTemplate,
+  selectedImage
 }) => {
+  const { user } = useAuth()
+  const { openAuthModal, setGuestSelectedTemplate, setGuestSelectedImage } = useApp()
+
+  const handleGenerate = () => {
+    // 检查用户是否已登录
+    if (!user) {
+      // 保存游客的选择数据
+      if (selectedTemplate) {
+        setGuestSelectedTemplate(selectedTemplate)
+      }
+      if (selectedImage) {
+        setGuestSelectedImage(selectedImage)
+      }
+      // 打开登录Modal
+      openAuthModal()
+      return
+    }
+    
+    // 用户已登录，继续生成
+    onGenerate()
+  }
   const getButtonText = () => {
     if (isLoading) {
       return `Generating... ${Math.round(loadingProgress)}%`
@@ -45,7 +72,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
     <section className={cn("text-center", className)}>
       <div className="max-w-md mx-auto">
         <Button
-          onClick={onGenerate}
+          onClick={handleGenerate}
           disabled={isDisabled || isLoading}
           size="lg"
           className={cn(

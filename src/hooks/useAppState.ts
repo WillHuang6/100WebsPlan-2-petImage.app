@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Template } from '@/config/templates'
 import { useTemplates } from './useTemplates'
 import { useImageGeneration, GenerationResult } from './useImageGeneration'
+import { useAuth } from '@/contexts/AuthContext'
+import { useApp } from '@/contexts/AppContext'
 
 export interface AppState {
   selectedTemplate: Template | null
@@ -13,6 +15,13 @@ export interface AppState {
 
 export const useAppState = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const { user } = useAuth()
+  const { 
+    guestSelectedTemplate, 
+    guestSelectedImage, 
+    clearGuestData, 
+    closeAuthModal 
+  } = useApp()
   
   // 使用模板管理hook
   const {
@@ -22,6 +31,22 @@ export const useAppState = () => {
     selectTemplate,
     clearSelection: clearTemplateSelection
   } = useTemplates()
+
+  // 监听用户登录状态变化，恢复游客数据
+  useEffect(() => {
+    if (user && (guestSelectedTemplate || guestSelectedImage)) {
+      // 用户刚登录，恢复游客数据
+      if (guestSelectedTemplate && !selectedTemplate) {
+        selectTemplate(guestSelectedTemplate)
+      }
+      if (guestSelectedImage && !selectedImage) {
+        setSelectedImage(guestSelectedImage)
+      }
+      // 清除游客数据并关闭登录Modal
+      clearGuestData()
+      closeAuthModal()
+    }
+  }, [user, guestSelectedTemplate, guestSelectedImage, selectedTemplate, selectedImage, selectTemplate, clearGuestData, closeAuthModal])
 
   // 使用图片生成hook
   const {

@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { AppProvider } from '@/contexts/AppContext'
 import { AuthGuard } from '@/components/AuthGuard'
 import { AuthModalWrapper } from '@/components/AuthModalWrapper'
+import { Navigation } from '@/components/Navigation'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,7 +25,10 @@ export default function RootLayout({
         <AuthProvider>
           <AppProvider>
             <AuthGuard>
-              {children}
+              <Navigation />
+              <main className="pt-16">
+                {children}
+              </main>
             </AuthGuard>
             <AuthModalWrapper />
           </AppProvider>

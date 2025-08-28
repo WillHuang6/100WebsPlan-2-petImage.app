@@ -3,10 +3,12 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
+import { getTemplateById } from '@/config/templates'
 
 interface Generation {
   id: string
-  template_used: {
+  template_id: string
+  template_used?: {
     id: string
     name: string
   }
@@ -29,6 +31,16 @@ export const ImageModal: React.FC<ImageModalProps> = ({
   onDownload 
 }) => {
   if (!isOpen || !generation) return null
+
+  // 安全获取模板名称的函数
+  const getTemplateName = (generation: Generation): string => {
+    if (generation.template_used?.name) {
+      return generation.template_used.name
+    }
+    
+    const template = getTemplateById(generation.template_id)
+    return template?.name || '未知模板'
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -57,7 +69,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
               <div className="max-w-full max-h-[70vh] lg:max-h-[80vh]">
                 <img
                   src={generation.result_image_url}
-                  alt={generation.template_used.name}
+                  alt={getTemplateName(generation)}
                   className="w-full h-full object-contain rounded-lg shadow-lg"
                 />
               </div>
@@ -68,7 +80,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
               {/* 作品标题 */}
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  {generation.template_used.name}
+                  {getTemplateName(generation)}
                 </h2>
                 <p className="text-gray-500">
                   创建于 {formatDate(generation.created_at)}
@@ -86,7 +98,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
                 
                 <div className="text-sm text-gray-600">
                   <p className="mb-1">作品ID: {generation.id.slice(-8)}</p>
-                  <p>模板: {generation.template_used.name}</p>
+                  <p>模板: {getTemplateName(generation)}</p>
                 </div>
               </div>
 

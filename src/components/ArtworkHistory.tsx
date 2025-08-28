@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ImageModal } from '@/components/ImageModal'
 import { formatDate } from '@/lib/utils'
+import { getTemplateById } from '@/config/templates'
 
 interface Generation {
   id: string
-  template_used: {
+  template_id: string
+  template_used?: {
     id: string
     name: string
   }
@@ -24,6 +26,16 @@ export const ArtworkHistory: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<Generation | null>(null)
+
+  // 安全获取模板名称的函数
+  const getTemplateName = (generation: Generation): string => {
+    if (generation.template_used?.name) {
+      return generation.template_used.name
+    }
+    
+    const template = getTemplateById(generation.template_id)
+    return template?.name || '未知模板'
+  }
 
   useEffect(() => {
     if (user) {
@@ -136,7 +148,7 @@ export const ArtworkHistory: React.FC = () => {
               <div className="aspect-[3/4] bg-gray-100 overflow-hidden">
                 <img
                   src={generation.result_image_url}
-                  alt={generation.template_used.name}
+                  alt={getTemplateName(generation)}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
@@ -145,7 +157,7 @@ export const ArtworkHistory: React.FC = () => {
               {/* 作品信息 */}
               <div className="p-4">
                 <h3 className="font-semibold text-gray-800 mb-2 line-clamp-1">
-                  {generation.template_used.name}
+                  {getTemplateName(generation)}
                 </h3>
                 <p className="text-sm text-gray-500 mb-3">
                   {formatDate(generation.created_at)}

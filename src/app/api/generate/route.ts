@@ -89,12 +89,28 @@ export async function POST(request: NextRequest) {
 
       if (uploadError || !originalImageUrl) {
         console.error('Failed to upload original image:', uploadError)
+        console.error('Upload error details:', {
+          error: uploadError,
+          url: originalImageUrl,
+          path: originalImagePath,
+          bucket: 'user-uploads',
+          userId: user.id,
+          generationId: generation.id
+        })
         await updateGeneration(generation.id, { 
           status: 'failed', 
           error_message: `Upload failed: ${uploadError}` 
         })
         return NextResponse.json(
-          { message: 'Failed to upload image', error: uploadError },
+          { 
+            message: 'Failed to upload image', 
+            error: uploadError,
+            details: {
+              path: originalImagePath,
+              bucket: 'user-uploads',
+              userId: user.id
+            }
+          },
           { status: 500 }
         )
       }
@@ -204,15 +220,28 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
       console.error('Generation process error:', error)
+      console.error('Error stack:', error.stack)
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        cause: error.cause
+      })
       
       // 更新数据库记录为失败状态
-      await updateGeneration(generation.id, {
-        status: 'failed',
-        error_message: error.message || 'Unknown error during generation'
-      })
+      if (generation?.id) {
+        await updateGeneration(generation.id, {
+          status: 'failed',
+          error_message: error.message || 'Unknown error during generation'
+        })
+      }
 
       return NextResponse.json(
-        { message: 'Generation failed', error: error.message },
+        { 
+          message: 'Generation failed', 
+          error: error.message,
+          errorName: error.name,
+          stack: error.stack?.split('\n').slice(0, 5) // 只返回前5行堆栈信息
+        },
         { status: 500 }
       )
     }

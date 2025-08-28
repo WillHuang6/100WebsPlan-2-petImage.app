@@ -12,27 +12,26 @@ export async function GET() {
       );
     }
 
-    // 根据官方模板，需要使用正确的方法获取产品
-    // 暂时返回示例数据，实际应该调用正确的API
+    // 使用你在 Creem 中创建的实际产品
     const products = [
       {
-        id: 'basic_plan',
-        name: '基础套餐',
-        description: '适合个人用户的基础功能',
+        id: 'prod_2YRPVlkhs0lCrdOgVQomZT',
+        name: 'PetImage 基础版',
+        description: '适合个人用户的AI宠物图像生成服务',
         price: {
-          amount: 999,
-          currency: 'CNY'
+          amount: 449,  // $4.49 = 449 cents
+          currency: 'USD'
         },
         type: 'subscription',
         interval: 'month'
       },
       {
-        id: 'pro_plan',
-        name: '专业套餐',
-        description: '适合专业用户的高级功能',
+        id: 'prod_nmwW7Mttc1hpOtsaO5bVs',
+        name: 'PetImage 专业版',
+        description: '专业用户的高级AI图像生成功能，包含更多模板和高分辨率输出',
         price: {
-          amount: 2999,
-          currency: 'CNY'
+          amount: 1999,  // $19.99 = 1999 cents
+          currency: 'USD'
         },
         type: 'subscription',
         interval: 'month'

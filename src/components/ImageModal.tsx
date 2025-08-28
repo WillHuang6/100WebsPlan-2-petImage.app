@@ -12,7 +12,7 @@ interface Generation {
     id: string
     name: string
   }
-  result_image_url: string
+  generated_image_url: string
   created_at: string
   status: string
 }
@@ -68,7 +68,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             <div className="flex-1 bg-gray-50 flex items-center justify-center p-6">
               <div className="max-w-full max-h-[70vh] lg:max-h-[80vh]">
                 <img
-                  src={generation.result_image_url}
+                  src={generation.generated_image_url}
                   alt={getTemplateName(generation)}
                   className="w-full h-full object-contain rounded-lg shadow-lg"
                 />

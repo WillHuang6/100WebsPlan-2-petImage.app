@@ -15,7 +15,7 @@ interface Generation {
     id: string
     name: string
   }
-  result_image_url: string
+  generated_image_url: string
   created_at: string
   status: string
 }
@@ -67,7 +67,7 @@ export const ArtworkHistory: React.FC = () => {
 
   const handleDownload = (generation: Generation) => {
     const link = document.createElement('a')
-    link.href = generation.result_image_url
+    link.href = generation.generated_image_url
     link.download = `${getTemplateName(generation)}-${generation.id}.png`
     link.click()
   }
@@ -147,7 +147,7 @@ export const ArtworkHistory: React.FC = () => {
               {/* 图片预览 */}
               <div className="aspect-[3/4] bg-gray-100 overflow-hidden">
                 <img
-                  src={generation.result_image_url}
+                  src={generation.generated_image_url}
                   alt={getTemplateName(generation)}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"

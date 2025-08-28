@@ -1,8 +1,9 @@
 import React from 'react'
+import { UserMenu } from '@/components/UserMenu'
 
 export const Header: React.FC = () => {
   return (
-    <section className="text-center mb-16">
+    <section className="text-center mb-16 relative">
       {/* Logo and Brand */}
       <div className="flex items-center justify-center mb-8">
         <div className="w-14 h-14 rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-orange-400 flex items-center justify-center mr-4 shadow-lg">
@@ -49,6 +50,11 @@ export const Header: React.FC = () => {
           <span>🐕</span>
           <span>🐱</span>
         </p>
+      </div>
+
+      {/* User Menu */}
+      <div className="absolute top-0 right-0">
+        <UserMenu />
       </div>
     </section>
   )

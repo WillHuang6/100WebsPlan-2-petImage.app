@@ -53,18 +53,59 @@ export async function POST(request: NextRequest) {
 
     // 使用Creem SDK创建结账会话
     console.log('调用Creem API...');
-    const checkoutSessionResponse = await creem.createCheckout({
-      xApiKey: apiKey,
-      createCheckoutRequest: {
-        productId: productId,
-        successUrl: successUrl,
-        requestId: userId,
-        metadata: {
-          email: userEmail,
-          userId: userId,
-        },
-      },
+    console.log('请求参数:', {
+      productId,
+      successUrl,
+      requestId: userId,
+      metadata: { email: userEmail, userId }
     });
+
+    // 尝试不同的API调用格式
+    let checkoutSessionResponse;
+    
+    try {
+      // 方法1: 尝试官方模板格式
+      checkoutSessionResponse = await creem.createCheckout({
+        xApiKey: apiKey,
+        createCheckoutRequest: {
+          productId,
+          successUrl,
+          requestId: userId,
+          metadata: {
+            email: userEmail,
+            name: userEmail,
+            userId,
+          },
+        },
+      });
+    } catch (firstError) {
+      const errorMsg = firstError instanceof Error ? firstError.message : '未知错误';
+      console.log('第一种格式失败，尝试第二种:', errorMsg);
+      
+      try {
+        // 方法2: 尝试更简化的格式
+        checkoutSessionResponse = await creem.createCheckout({
+          productId,
+          successUrl,
+          customerEmail: userEmail,
+        } as any, {
+          headers: {
+            'X-API-Key': apiKey,
+          }
+        } as any);
+      } catch (secondError) {
+        const errorMsg2 = secondError instanceof Error ? secondError.message : '未知错误';
+        console.log('第二种格式也失败，尝试第三种:', errorMsg2);
+        
+        // 方法3: 尝试直接参数格式
+        checkoutSessionResponse = await (creem as any).createCheckout(
+          productId,
+          successUrl,
+          userEmail,
+          { apiKey }
+        );
+      }
+    }
 
     console.log('Creem响应:', checkoutSessionResponse);
 

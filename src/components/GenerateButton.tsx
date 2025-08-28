@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useApp } from '@/contexts/AppContext'
+import { Template } from '@/config/templates'
 
 interface GenerateButtonProps {
   onGenerate: () => void
@@ -12,7 +13,7 @@ interface GenerateButtonProps {
   isLoading?: boolean
   loadingProgress?: number
   className?: string
-  selectedTemplate?: string | null
+  selectedTemplate?: Template | null
   selectedImage?: File | null
 }
 
@@ -33,7 +34,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
     if (!user) {
       // 保存游客的选择数据
       if (selectedTemplate) {
-        setGuestSelectedTemplate(selectedTemplate)
+        setGuestSelectedTemplate(selectedTemplate.id)
       }
       if (selectedImage) {
         setGuestSelectedImage(selectedImage)

@@ -48,6 +48,12 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Starting generation for user: ${user.id}, template: ${templateId}`)
+    console.log('=== DEBUG INFO ===')
+    console.log('User ID:', user.id)
+    console.log('User ID type:', typeof user.id)
+    console.log('User ID length:', user.id.length)
+    console.log('User email:', user.email)
+    console.log('User role:', user.role)
 
     // 5. 创建数据库记录 (status: pending)
     const { generation, error: dbError } = await createGeneration({
@@ -68,6 +74,13 @@ export async function POST(request: NextRequest) {
     try {
       // 6. 上传原始图片到私有桶
       const originalImagePath = generateStoragePath(user.id, generation.id, 'original.jpg')
+      console.log('=== STORAGE DEBUG ===')
+      console.log('Generation ID:', generation.id)
+      console.log('Storage path:', originalImagePath)
+      console.log('Path parts:', originalImagePath.split('/'))
+      console.log('Expected folder[1]:', originalImagePath.split('/')[0])
+      console.log('User ID matches folder[1]:', user.id === originalImagePath.split('/')[0])
+      
       const { url: originalImageUrl, error: uploadError } = await uploadToStorage(
         image,
         'user-uploads',

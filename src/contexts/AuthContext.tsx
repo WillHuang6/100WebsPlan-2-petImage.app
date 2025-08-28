@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase-client'
+import type { Database } from '@/lib/supabase-types'
 
 interface AuthContextType {
   user: User | null
@@ -40,31 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         setLoading(false)
 
-        // Handle user profile creation/update
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Ensure user profile exists
-          const { data: profile, error: selectError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-
-          if (!profile && !selectError) {
-            // Create profile if it doesn't exist
-            const { error: insertError } = await supabase.from('profiles').insert([
-              {
-                id: session.user.id,
-                email: session.user.email || null,
-                display_name: session.user.user_metadata?.display_name || session.user.email || null,
-                avatar_url: session.user.user_metadata?.avatar_url || null,
-              }
-            ])
-            
-            if (insertError) {
-              console.error('Error creating profile:', insertError)
-            }
-          }
-        }
+        // User profile will be automatically created by database trigger
+        // No manual profile creation needed here
       }
     )
 

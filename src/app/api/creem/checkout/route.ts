@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { creem } from '@/lib/creem';
 import { createClient } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
       console.log('认证检查失败，使用测试用户:', authErr);
     }
 
-    // 使用Creem SDK创建结账会话
+    // 使用 HTTP API 直接调用 Creem 而不是 SDK
     console.log('调用Creem API...');
     console.log('请求参数:', {
       productId,
@@ -60,52 +59,70 @@ export async function POST(request: NextRequest) {
       metadata: { email: userEmail, userId }
     });
 
-    // 尝试不同的API调用格式
-    let checkoutSessionResponse;
-    
-    try {
-      // 方法1: 尝试官方模板格式
-      checkoutSessionResponse = await creem.createCheckout({
-        xApiKey: apiKey,
-        createCheckoutRequest: {
-          productId,
-          successUrl,
+    // 直接调用 Creem REST API
+    const creemResponse = await fetch('https://api.creem.io/v1/checkout/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'X-API-Key': apiKey,
+      },
+      body: JSON.stringify({
+        productId,
+        successUrl,
+        cancelUrl: 'https://100-webs-plan-2-pet-image-app.vercel.app/pricing',
+        customerEmail: userEmail,
+        metadata: {
+          email: userEmail,
+          userId,
           requestId: userId,
-          metadata: {
-            email: userEmail,
-            name: userEmail,
-            userId,
-          },
         },
-      });
-    } catch (firstError) {
-      const errorMsg = firstError instanceof Error ? firstError.message : '未知错误';
-      console.log('第一种格式失败，尝试第二种:', errorMsg);
+      }),
+    });
+
+    console.log('Creem API 响应状态:', creemResponse.status);
+    
+    if (!creemResponse.ok) {
+      const errorText = await creemResponse.text();
+      console.log('Creem API 错误响应:', errorText);
+      
+      // 如果 REST API 不工作，尝试使用动态导入 SDK
+      console.log('REST API 失败，尝试动态导入 Creem SDK...');
       
       try {
-        // 方法2: 尝试更简化的格式
-        checkoutSessionResponse = await creem.createCheckout({
-          productId,
-          successUrl,
-          customerEmail: userEmail,
-        } as any, {
-          headers: {
-            'X-API-Key': apiKey,
-          }
-        } as any);
-      } catch (secondError) {
-        const errorMsg2 = secondError instanceof Error ? secondError.message : '未知错误';
-        console.log('第二种格式也失败，尝试第三种:', errorMsg2);
+        const { Creem } = await import('creem');
+        const dynamicCreem = new Creem({ serverIdx: 1 });
         
-        // 方法3: 尝试直接参数格式
-        checkoutSessionResponse = await (creem as any).createCheckout(
-          productId,
-          successUrl,
-          userEmail,
-          { apiKey }
+        const checkoutSessionResponse = await dynamicCreem.createCheckout({
+          xApiKey: apiKey,
+          createCheckoutRequest: {
+            productId,
+            successUrl,
+            requestId: userId,
+            metadata: {
+              email: userEmail,
+              userId,
+            },
+          },
+        });
+        
+        const checkoutUrl = checkoutSessionResponse.checkoutUrl || 
+                           (checkoutSessionResponse as any).url ||
+                           (checkoutSessionResponse as any).checkout_url;
+        
+        if (checkoutUrl) {
+          return NextResponse.json({ url: checkoutUrl });
+        }
+      } catch (sdkError) {
+        console.log('SDK 也失败了:', sdkError);
+        return NextResponse.json(
+          { error: 'Creem API 调用失败', details: errorText },
+          { status: 500 }
         );
       }
     }
+
+    const checkoutSessionResponse = await creemResponse.json();
 
     console.log('Creem响应:', checkoutSessionResponse);
 

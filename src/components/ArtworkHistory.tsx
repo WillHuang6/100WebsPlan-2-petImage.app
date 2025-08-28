@@ -68,7 +68,7 @@ export const ArtworkHistory: React.FC = () => {
   const handleDownload = (generation: Generation) => {
     const link = document.createElement('a')
     link.href = generation.result_image_url
-    link.download = `${generation.template_used.name}-${generation.id}.png`
+    link.download = `${getTemplateName(generation)}-${generation.id}.png`
     link.click()
   }
 

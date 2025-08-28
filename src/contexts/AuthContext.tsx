@@ -75,9 +75,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    console.log('AuthContext: signOut called')
     setLoading(true)
-    await supabase.auth.signOut()
-    setLoading(false)
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('AuthContext: signOut error:', error)
+        throw error
+      }
+      console.log('AuthContext: signOut successful')
+      // 清除本地状态
+      setUser(null)
+      setSession(null)
+    } catch (error) {
+      console.error('AuthContext: signOut exception:', error)
+      throw error
+    } finally {
+      setLoading(false)
+    }
   }
 
   const signInWithProvider = async (provider: 'google' | 'github') => {

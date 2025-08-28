@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import Link from 'next/link'
 
 export const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -70,16 +71,15 @@ export const UserMenu: React.FC = () => {
               </div>
               
               <div className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-left p-2"
-                  onClick={() => {
-                    setIsOpen(false)
-                    // TODO: 实现查看历史记录功能
-                  }}
-                >
-                  📋 我的生成历史
-                </Button>
+                <Link href="/history" className="block">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-left p-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    📋 我的生成历史
+                  </Button>
+                </Link>
                 
                 <Button 
                   variant="ghost" 

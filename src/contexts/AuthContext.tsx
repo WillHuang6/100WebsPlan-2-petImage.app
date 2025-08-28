@@ -43,20 +43,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Handle user profile creation/update
         if (event === 'SIGNED_IN' && session?.user) {
           // Ensure user profile exists
-          const { data: profile } = await supabase
+          const { data: profile, error: selectError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single()
 
-          if (!profile) {
+          if (!profile && !selectError) {
             // Create profile if it doesn't exist
-            await supabase.from('profiles').insert({
-              id: session.user.id,
-              email: session.user.email,
-              display_name: session.user.user_metadata?.display_name || session.user.email,
-              avatar_url: session.user.user_metadata?.avatar_url,
-            })
+            const { error: insertError } = await supabase.from('profiles').insert([
+              {
+                id: session.user.id,
+                email: session.user.email || null,
+                display_name: session.user.user_metadata?.display_name || session.user.email || null,
+                avatar_url: session.user.user_metadata?.avatar_url || null,
+              }
+            ])
+            
+            if (insertError) {
+              console.error('Error creating profile:', insertError)
+            }
           }
         }
       }

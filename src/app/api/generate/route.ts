@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTemplateById } from '@/config/templates'
 import { validateImageFile } from '@/lib/imageUtils'
+import { requireAuth } from '@/lib/auth-server'
+import { createGeneration, updateGeneration, generateShareToken } from '@/lib/database'
+import { uploadToStorage, downloadFileAsBlob, generateStoragePath } from '@/lib/storage'
 import Replicate from 'replicate'
 
 // 初始化 Replicate
@@ -10,11 +13,20 @@ const replicate = new Replicate({
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. 用户认证检查
+    const { user, error: authError } = await requireAuth()
+    if (authError || !user) {
+      return NextResponse.json(
+        { message: 'Authentication required', error: authError },
+        { status: 401 }
+      )
+    }
+
     const formData = await request.formData()
     const image = formData.get('image') as File
     const templateId = formData.get('templateId') as string
 
-    // Validation
+    // 2. 基础验证
     if (!image) {
       return NextResponse.json({ message: 'No image provided' }, { status: 400 })
     }
@@ -23,89 +35,185 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'No template ID provided' }, { status: 400 })
     }
 
-    // Check if template exists
+    // 3. 检查模板是否存在
     const template = getTemplateById(templateId)
     if (!template) {
       return NextResponse.json({ message: 'Template not found' }, { status: 404 })
     }
 
-    // Validate image file
+    // 4. 验证图片文件
     const validation = validateImageFile(image)
     if (!validation.valid) {
-      return NextResponse.json({ message: validation.error }, { status: 400 })
+      return NextResponse.json({ message: validation.error || 'Invalid image file' }, { status: 400 })
     }
 
-    console.log(`🚀 Processing image generation: ${image.name}, template: ${template.name}`)
+    console.log(`Starting generation for user: ${user.id}, template: ${templateId}`)
 
-    // Step 1: Convert image to base64 data URI (alternative to file upload)
-    console.log('📤 Converting image to base64...')
-    const bytes = await image.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    const base64 = buffer.toString('base64')
-    const mimeType = image.type
-    const dataUri = `data:${mimeType};base64,${base64}`
-    
-    console.log('✅ Image converted to base64, size:', Math.round(base64.length / 1024), 'KB')
-
-    // Step 2: Call Replicate API
-    console.log('🎨 Calling Replicate API...')
-    const input = {
-      prompt: template.prompt,
-      image_input: [dataUri], // Try base64 data URI instead of URL
-    }
-
-    console.log('📝 Replicate input:', { 
-      prompt: input.prompt.substring(0, 100) + '...', 
-      image_count: input.image_input.length 
+    // 5. 创建数据库记录 (status: pending)
+    const { generation, error: dbError } = await createGeneration({
+      user_id: user.id,
+      template_id: templateId,
+      original_image_url: '', // 待上传后填入
+      status: 'pending'
     })
 
-    const output = await replicate.run("google/nano-banana", { input })
-    console.log('🎉 Replicate generation completed!')
-
-    // Step 3: Process output
-    let resultImageUrl: string
-    
-    if (output && typeof output === 'object' && 'url' in output) {
-      // If output has a url method
-      resultImageUrl = (output as any).url()
-    } else if (typeof output === 'string') {
-      // If output is directly a URL string
-      resultImageUrl = output
-    } else if (Array.isArray(output) && output.length > 0) {
-      // If output is an array, take the first result
-      resultImageUrl = output[0]
-    } else {
-      throw new Error('Unexpected output format from Replicate')
+    if (dbError || !generation) {
+      console.error('Failed to create generation record:', dbError)
+      return NextResponse.json(
+        { message: 'Failed to create generation record', error: dbError },
+        { status: 500 }
+      )
     }
 
-    console.log('📸 Generated image URL:', resultImageUrl)
+    try {
+      // 6. 上传原始图片到私有桶
+      const originalImagePath = generateStoragePath(user.id, generation.id, 'original.jpg')
+      const { url: originalImageUrl, error: uploadError } = await uploadToStorage(
+        image,
+        'user-uploads',
+        originalImagePath
+      )
 
-    // Return success response
-    return NextResponse.json({
-      success: true,
-      id: `gen_${Date.now()}`,
-      imageUrl: resultImageUrl,
-      message: 'Image generated successfully',
-      templateUsed: template
-    })
+      if (uploadError || !originalImageUrl) {
+        console.error('Failed to upload original image:', uploadError)
+        await updateGeneration(generation.id, { 
+          status: 'failed', 
+          error_message: `Upload failed: ${uploadError}` 
+        })
+        return NextResponse.json(
+          { message: 'Failed to upload image', error: uploadError },
+          { status: 500 }
+        )
+      }
 
-  } catch (error) {
-    console.error('❌ Generation API error:', error)
-    
-    // Return detailed error for debugging
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      // 7. 更新数据库记录添加原图URL并设置为processing
+      await updateGeneration(generation.id, {
+        original_image_url: originalImageUrl,
+        status: 'processing'
+      })
+
+      console.log('Calling Replicate API...')
+
+      // 8. 转换图片为base64供Replicate使用
+      const arrayBuffer = await image.arrayBuffer()
+      const base64 = Buffer.from(arrayBuffer).toString('base64')
+      const mimeType = image.type
+      const dataUri = `data:${mimeType};base64,${base64}`
+
+      // 9. 调用Replicate API
+      const input = {
+        prompt: template.prompt,
+        image_input: [dataUri],
+      }
+
+      const output = await replicate.run("google/nano-banana", { input })
+      
+      console.log('Replicate response received:', Array.isArray(output) ? `${output.length} results` : typeof output)
+
+      // 10. 处理Replicate结果
+      let replicateImageUrl: string
+      
+      if (output && typeof output === 'object' && 'url' in output) {
+        replicateImageUrl = (output as any).url()
+      } else if (typeof output === 'string') {
+        replicateImageUrl = output
+      } else if (Array.isArray(output) && output.length > 0) {
+        replicateImageUrl = output[0]
+      } else {
+        await updateGeneration(generation.id, {
+          status: 'failed',
+          error_message: 'Replicate API returned unexpected format'
+        })
+        return NextResponse.json(
+          { message: 'Failed to generate image - unexpected AI response format' },
+          { status: 500 }
+        )
+      }
+
+      // 11. 下载生成的图片并上传到公开桶
+      const generatedBlob = await downloadFileAsBlob(replicateImageUrl)
+      if (!generatedBlob) {
+        await updateGeneration(generation.id, {
+          status: 'failed',
+          error_message: 'Failed to download generated image'
+        })
+        return NextResponse.json(
+          { message: 'Failed to process generated image' },
+          { status: 500 }
+        )
+      }
+
+      const generatedImagePath = generateStoragePath(user.id, generation.id, 'result.jpg')
+      const { url: generatedImageUrl, error: generatedUploadError } = await uploadToStorage(
+        generatedBlob,
+        'generated-images',
+        generatedImagePath
+      )
+
+      if (generatedUploadError || !generatedImageUrl) {
+        console.error('Failed to upload generated image:', generatedUploadError)
+        await updateGeneration(generation.id, {
+          status: 'failed',
+          error_message: `Generated image upload failed: ${generatedUploadError}`
+        })
+        return NextResponse.json(
+          { message: 'Failed to save generated image', error: generatedUploadError },
+          { status: 500 }
+        )
+      }
+
+      // 12. 更新数据库记录为完成状态
+      const { generation: finalGeneration, error: finalUpdateError } = await updateGeneration(generation.id, {
+        generated_image_url: generatedImageUrl,
+        status: 'completed',
+        share_token: generateShareToken()
+      })
+
+      if (finalUpdateError) {
+        console.error('Failed to update generation record:', finalUpdateError)
+        // 即使更新失败，也返回成功结果，因为图片已经生成了
+      }
+
+      console.log(`Generation completed successfully: ${generation.id}`)
+
+      // 13. 返回成功结果
+      return NextResponse.json({
+        success: true,
+        generationId: generation.id,
+        imageUrl: generatedImageUrl,
+        template: {
+          id: template.id,
+          name: template.name,
+        },
+        shareToken: finalGeneration?.share_token || null,
+        message: 'Image generated successfully'
+      })
+
+    } catch (error: any) {
+      console.error('Generation process error:', error)
+      
+      // 更新数据库记录为失败状态
+      await updateGeneration(generation.id, {
+        status: 'failed',
+        error_message: error.message || 'Unknown error during generation'
+      })
+
+      return NextResponse.json(
+        { message: 'Generation failed', error: error.message },
+        { status: 500 }
+      )
+    }
+
+  } catch (error: any) {
+    console.error('API route error:', error)
     return NextResponse.json(
-      { 
-        message: 'Image generation failed', 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      },
+      { message: 'Internal server error', error: error.message },
       { status: 500 }
     )
   }
 }
 
-// 添加 OPTIONS 方法支持 CORS
+// OPTIONS 方法支持 CORS
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,

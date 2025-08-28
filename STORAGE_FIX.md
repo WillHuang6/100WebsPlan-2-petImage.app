@@ -6,27 +6,23 @@
 Storage upload error: new row violates row-level security policy
 ```
 
-## 解决方案 - 通过UI界面操作
+## 解决方案 - 使用现有存储桶
 
-### 步骤1：创建存储桶
-1. 登录 Supabase Dashboard
-2. 访问：https://supabase.com/dashboard/project/[你的项目ID]/storage/buckets
-3. 点击 "New bucket" 创建两个桶：
+### 步骤1：确认现有存储桶设置
+你已经有了两个存储桶，我们直接使用它们：
 
-**创建 pet-originals 桶：**
-- Name: `pet-originals`  
-- ❌ 不勾选 "Public bucket" (保持私有)
-- 点击 "Create bucket"
+**现有的 user-uploads 桶：**
+- 用途：存储用户上传的原始宠物照片
+- 设置：应该是私有桶 (如果是公开桶请改为私有)
 
-**创建 pet-results 桶：**
-- Name: `pet-results`
-- ✅ 勾选 "Public bucket" (设为公开)
-- 点击 "Create bucket"
+**现有的 generated-images 桶：**
+- 用途：存储AI生成的结果图片  
+- 设置：应该是公开桶 (如果不是公开桶请改为公开)
 
 ### 步骤2：设置Storage策略（通过UI界面）
 
-#### 为 pet-originals 设置策略：
-1. 点击 `pet-originals` 桶
+#### 为 user-uploads 桶设置策略：
+1. 点击 `user-uploads` 桶
 2. 进入 "Policies" 标签页
 3. 点击 "New policy"
 4. 选择 "Custom" 模板
@@ -59,8 +55,8 @@ auth.uid()::text = (storage.foldername(name))[1]
 auth.uid()::text = (storage.foldername(name))[1]
 ```
 
-#### 为 pet-results 设置策略：
-1. 点击 `pet-results` 桶
+#### 为 generated-images 桶设置策略：
+1. 点击 `generated-images` 桶
 2. 进入 "Policies" 标签页  
 3. 点击 "New policy"
 4. 创建以下策略：
@@ -101,21 +97,22 @@ auth.uid()::text = (storage.foldername(name))[1]
 ## 文件路径结构
 修复后，文件将按以下结构存储：
 ```
-pet-originals/
+user-uploads/
   └── [user-id]/
       └── [generation-id]/
           └── original.jpg
 
-pet-results/
+generated-images/
   └── [user-id]/
       └── [generation-id]/
           └── result.jpg
 ```
 
 ## 测试检查点
-- [ ] 创建了 pet-originals 存储桶（私有）
-- [ ] 创建了 pet-results 存储桶（公开）
-- [ ] 执行了所有RLS策略SQL
+- [ ] 确认 user-uploads 存储桶设置为私有
+- [ ] 确认 generated-images 存储桶设置为公开
+- [ ] 为 user-uploads 桶设置了3个RLS策略
+- [ ] 为 generated-images 桶设置了3个RLS策略
 - [ ] 用户可以成功上传图片
 - [ ] AI生成功能正常工作
 - [ ] 历史记录页面显示图片

@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       const originalImagePath = generateStoragePath(user.id, generation.id, 'original.jpg')
       const { url: originalImageUrl, error: uploadError } = await uploadToStorage(
         image,
-        'pet-originals',
+        'user-uploads',
         originalImagePath
       )
 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       const generatedImagePath = generateStoragePath(user.id, generation.id, 'result.jpg')
       const { url: generatedImageUrl, error: generatedUploadError } = await uploadToStorage(
         generatedBlob,
-        'pet-results',
+        'generated-images',
         generatedImagePath
       )
 

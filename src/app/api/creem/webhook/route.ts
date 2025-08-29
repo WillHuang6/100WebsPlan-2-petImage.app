@@ -66,30 +66,47 @@ async function handlePurchaseCompleted(data: any) {
       return;
     }
     
-    // 使用数据库事务确保数据一致性
-    await prisma.$transaction(async (tx) => {
-      // 1. 查找或创建用户profile
-      let profile = await tx.profile.findUnique({
-        where: { email: customerEmail }
-      });
-      
-      if (!profile) {
-        profile = await tx.profile.create({
+    // 分步处理，避免prepared statement冲突
+    // 1. 查找或创建用户profile
+    let profile = await prisma.profile.findUnique({
+      where: { email: customerEmail }
+    });
+    
+    if (!profile) {
+      try {
+        profile = await prisma.profile.create({
           data: {
             email: customerEmail,
             display_name: data.object?.customer?.name || 'User'
           }
         });
         console.log('创建新用户profile:', profile.id);
+      } catch (createError) {
+        // 如果创建失败，可能是并发创建，重新查找
+        profile = await prisma.profile.findUnique({
+          where: { email: customerEmail }
+        });
+        if (!profile) {
+          throw createError; // 如果还是找不到，抛出原始错误
+        }
       }
-      
-      // 2. 创建购买记录
-      const purchase = await tx.purchase.upsert({
-        where: { id: checkoutId },
-        update: {
-          status: 'completed'
-        },
-        create: {
+    }
+    
+    // 2. 检查购买记录是否已存在，避免重复处理
+    const existingPurchase = await prisma.purchase.findUnique({
+      where: { id: checkoutId }
+    });
+    
+    if (existingPurchase) {
+      console.log('购买记录已存在，跳过处理:', checkoutId);
+      return;
+    }
+    
+    // 3. 使用事务创建购买记录和更新credits
+    await prisma.$transaction(async (tx) => {
+      // 创建购买记录
+      const purchase = await tx.purchase.create({
+        data: {
           id: checkoutId,
           user_id: profile.id,
           product_id: productId,
@@ -103,7 +120,7 @@ async function handlePurchaseCompleted(data: any) {
         }
       });
       
-      // 3. 增加用户credits
+      // 增加用户credits
       await tx.profile.update({
         where: { id: profile.id },
         data: {

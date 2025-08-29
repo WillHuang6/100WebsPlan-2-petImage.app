@@ -9,6 +9,7 @@ export interface Database {
           display_name: string | null
           avatar_url: string | null
           credits: number
+          total_credits: number
           created_at: string
           updated_at: string
         }
@@ -18,6 +19,7 @@ export interface Database {
           display_name?: string | null
           avatar_url?: string | null
           credits?: number
+          total_credits?: number
           created_at?: string
           updated_at?: string
         }
@@ -27,6 +29,7 @@ export interface Database {
           display_name?: string | null
           avatar_url?: string | null
           credits?: number
+          total_credits?: number
           created_at?: string
           updated_at?: string
         }
@@ -70,6 +73,50 @@ export interface Database {
           is_public?: boolean
           created_at?: string
           expires_at?: string
+        }
+      }
+      purchase: {
+        Row: {
+          id: string
+          user_id: string
+          product_id: string
+          product_name: string
+          amount: number
+          currency: string
+          credits: number
+          provider_customer_id: string
+          transaction_id: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          user_id: string
+          product_id: string
+          product_name: string
+          amount: number
+          currency?: string
+          credits: number
+          provider_customer_id: string
+          transaction_id?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          product_id?: string
+          product_name?: string
+          amount?: number
+          currency?: string
+          credits?: number
+          provider_customer_id?: string
+          transaction_id?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
         }
       }
       shares: {

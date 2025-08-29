@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { creem } from '@/lib/creem';
-import { prisma } from '@/lib/prisma';
+import { createAdminClient } from '@/lib/supabase-server';
 import { getProductConfig } from '@/lib/products';
 import crypto from 'crypto';
 
@@ -69,12 +68,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-
 async function handlePurchaseCompleted(data: any) {
   try {
     console.log('处理结账完成事件:', data.id);
     
-    // 提取关键信息 - 数据已经在object层级
+    // 提取关键信息
     const checkoutId = data.id;
     const customerEmail = data.customer?.email;
     const customerId = data.customer?.id;
@@ -94,77 +92,88 @@ async function handlePurchaseCompleted(data: any) {
       return;
     }
     
-    // 使用Prisma客户端处理数据库操作
+    // 使用Supabase Admin客户端
+    const supabase = createAdminClient();
+    
     try {
       console.log('处理购买记录...');
       
-      // 1. 查找或创建用户profile
-      let profile = await prisma.profile.findFirst({
-        where: { email: customerEmail }
-      });
+      // 1. 查找用户profile（通过email）
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', customerEmail);
       
-      if (!profile) {
-        profile = await prisma.profile.create({
-          data: {
-            email: customerEmail,
-            display_name: data.customer?.name || 'User',
-            credits: 0,
-            total_credits: 0,
-            created_at: new Date(),
-            updated_at: new Date()
-          }
-        });
-      } else {
-        // 更新时间
-        profile = await prisma.profile.update({
-          where: { id: profile.id },
-          data: { updated_at: new Date() }
-        });
+      if (profileError) {
+        console.error('查询用户失败:', profileError);
+        throw profileError;
       }
       
+      if (!profiles || profiles.length === 0) {
+        console.error('用户不存在:', customerEmail);
+        throw new Error(`用户不存在: ${customerEmail}. 用户需要先注册账号。`);
+      }
+      
+      const profile = profiles[0] as any;
       console.log('用户profile ID:', profile.id);
       
       // 2. 检查购买记录是否已存在
-      const existingPurchase = await prisma.purchase.findUnique({
-        where: { id: checkoutId }
-      });
+      const { data: existingPurchase, error: checkError } = await supabase
+        .from('purchase')
+        .select('id')
+        .eq('id', checkoutId)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('检查购买记录失败:', checkError);
+        throw checkError;
+      }
       
       if (existingPurchase) {
         console.log('购买记录已存在，跳过处理:', checkoutId);
         return;
       }
       
-      // 3. 使用事务创建购买记录和更新credits
-      await prisma.$transaction([
-        // 创建购买记录
-        prisma.purchase.create({
-          data: {
-            id: checkoutId,
-            user_id: profile.id,
-            product_id: productId,
-            product_name: productConfig.name,
-            amount: amount || productConfig.price,
-            currency: productConfig.currency,
-            credits: productConfig.credits,
-            provider_customer_id: customerId,
-            transaction_id: transactionId,
-            status: 'completed',
-            created_at: new Date(),
-            updated_at: new Date()
-          }
-        }),
-        // 更新用户credits
-        prisma.profile.update({
-          where: { id: profile.id },
-          data: {
-            credits: { increment: productConfig.credits },
-            total_credits: { increment: productConfig.credits },
-            updated_at: new Date()
-          }
-        })
-      ]);
+      // 3. 创建购买记录
+      const { error: insertError } = await (supabase as any)
+        .from('purchase')
+        .insert({
+          id: checkoutId,
+          user_id: profile.id,
+          product_id: productId,
+          product_name: productConfig.name,
+          amount: amount || productConfig.price,
+          currency: productConfig.currency,
+          credits: productConfig.credits,
+          provider_customer_id: customerId,
+          transaction_id: transactionId,
+          status: 'completed'
+        });
       
-      console.log('购买处理成功，添加Credits:', productConfig.credits);
+      if (insertError) {
+        console.error('创建购买记录失败:', insertError);
+        throw insertError;
+      }
+      
+      // 4. 更新用户credits
+      const newCredits = profile.credits + productConfig.credits;
+      const newTotalCredits = (profile.total_credits || 0) + productConfig.credits;
+      
+      const { error: updateError } = await (supabase as any)
+        .from('profiles')
+        .update({
+          credits: newCredits,
+          total_credits: newTotalCredits,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id);
+      
+      if (updateError) {
+        console.error('更新用户credits失败:', updateError);
+        throw updateError;
+      }
+      
+      console.log(`购买处理成功: ${checkoutId}, 添加Credits: ${productConfig.credits}`);
       
     } catch (dbError) {
       console.error('数据库操作错误:', dbError);
@@ -183,7 +192,6 @@ async function handleSubscriptionActive(data: any) {
     
     const subscriptionId = data.id;
     const customerEmail = data.customer?.email;
-    const customerId = data.customer?.id;
     const productId = data.product?.id;
     
     if (!subscriptionId || !customerEmail || !productId) {
@@ -197,43 +205,48 @@ async function handleSubscriptionActive(data: any) {
       return;
     }
     
-    // 使用Prisma客户端处理订阅激活
+    // 使用Supabase Admin客户端
+    const supabase = createAdminClient();
+    
     try {
       console.log('处理订阅激活...');
       
-      // 创建或更新用户profile
-      let profile = await prisma.profile.findFirst({
-        where: { email: customerEmail }
-      });
+      // 查找用户profile
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', customerEmail);
       
-      if (!profile) {
-        profile = await prisma.profile.create({
-          data: {
-            email: customerEmail,
-            display_name: data.customer?.name || 'User',
-            credits: 0,
-            total_credits: 0,
-            created_at: new Date(),
-            updated_at: new Date()
-          }
-        });
-      } else {
-        profile = await prisma.profile.update({
-          where: { id: profile.id },
-          data: { updated_at: new Date() }
-        });
+      if (profileError) {
+        console.error('查询用户失败:', profileError);
+        throw profileError;
       }
+      
+      if (!profiles || profiles.length === 0) {
+        console.error('未找到用户profile:', customerEmail);
+        return;
+      }
+      
+      const profile = profiles[0] as any;
       
       // 处理订阅激活（如果是付费订阅，添加credits）
       if (productConfig.credits > 0) {
-        await prisma.profile.update({
-          where: { id: profile.id },
-          data: {
-            credits: { increment: productConfig.credits },
-            total_credits: { increment: productConfig.credits },
-            updated_at: new Date()
-          }
-        });
+        const newCredits = profile.credits + productConfig.credits;
+        const newTotalCredits = (profile.total_credits || 0) + productConfig.credits;
+        
+        const { error: updateError } = await (supabase as any)
+          .from('profiles')
+          .update({
+            credits: newCredits,
+            total_credits: newTotalCredits,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', profile.id);
+        
+        if (updateError) {
+          console.error('更新用户credits失败:', updateError);
+          throw updateError;
+        }
       }
       
       console.log('订阅激活处理成功:', subscriptionId);

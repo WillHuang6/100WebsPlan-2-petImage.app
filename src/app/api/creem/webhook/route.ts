@@ -95,13 +95,18 @@ async function handlePurchaseCompleted(data: any) {
     }
     
     // 使用原生PostgreSQL客户端，优化连接参数
+    const databaseUrl = process.env.DATABASE_URL;
+    const connectionString = databaseUrl?.includes('sslmode=') 
+      ? databaseUrl 
+      : `${databaseUrl}${databaseUrl?.includes('?') ? '&' : '?'}sslmode=require`;
+    
     const client = new Client({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       connectionTimeoutMillis: 5000,  // 5秒连接超时
       statement_timeout: 15000,       // 15秒语句超时
-      ssl: process.env.NODE_ENV === 'production' ? {
+      ssl: {
         rejectUnauthorized: false
-      } : false,
+      },
     });
     
     try {
@@ -224,13 +229,18 @@ async function handleSubscriptionActive(data: any) {
       return;
     }
     
+    const databaseUrl = process.env.DATABASE_URL;
+    const connectionString = databaseUrl?.includes('sslmode=') 
+      ? databaseUrl 
+      : `${databaseUrl}${databaseUrl?.includes('?') ? '&' : '?'}sslmode=require`;
+    
     const client = new Client({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       connectionTimeoutMillis: 5000,
       statement_timeout: 15000,
-      ssl: process.env.NODE_ENV === 'production' ? {
+      ssl: {
         rejectUnauthorized: false
-      } : false,
+      },
     });
     
     try {

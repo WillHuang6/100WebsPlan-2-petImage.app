@@ -101,11 +101,12 @@ async function handlePurchaseCompleted(data: any) {
   try {
     console.log('处理结账完成事件:', data);
     
+    // 根据实际的Creem数据结构调整
     const purchaseData = {
-      id: data.checkout?.id || data.id || `purchase_${Date.now()}`,
-      userId: data.customer?.email || data.customerEmail || data.metadata?.userId || 'unknown',
-      product: data.product?.id || data.productId || data.checkout?.productId || 'unknown',
-      providerCustomerId: data.customer?.id || data.customerId || 'unknown',
+      id: data.object?.id || data.id || `purchase_${Date.now()}`,
+      userId: data.object?.customer?.email || 'unknown',
+      product: data.object?.product?.id || 'unknown',
+      providerCustomerId: data.object?.customer?.id || 'unknown',
     };
     
     // 使用 upsert 避免重复创建

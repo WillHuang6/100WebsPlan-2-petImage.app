@@ -32,24 +32,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 获取当前用户（暂时简化，先不检查用户认证）
-    let userEmail = 'test@example.com';
-    let userId = 'test-user-id';
-
-    try {
-      const supabase = await createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (user && !authError) {
-        userEmail = user.email || userEmail;
-        userId = user.id || userId;
-        console.log('用户认证成功:', userId);
-      } else {
-        console.log('用户未认证，使用测试用户');
-      }
-    } catch (authErr) {
-      console.log('认证检查失败，使用测试用户:', authErr);
+    // 获取当前用户（生产环境必须登录）
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log('用户未认证，拒绝请求');
+      return NextResponse.json(
+        { error: '请先登录才能购买' },
+        { status: 401 }
+      );
     }
+
+    const userEmail = user.email!;
+    const userId = user.id;
+    console.log('用户认证成功:', userId);
 
     // 使用 HTTP API 直接调用 Creem 而不是 SDK
     console.log('调用Creem API...');
@@ -71,7 +68,7 @@ export async function POST(request: NextRequest) {
     
     console.log('请求体:', requestBody);
     
-    const creemResponse = await fetch('https://test-api.creem.io/v1/checkouts', {
+    const creemResponse = await fetch('https://api.creem.io/v1/checkouts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

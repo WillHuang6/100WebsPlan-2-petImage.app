@@ -54,6 +54,7 @@ export const useAppState = () => {
     progress,
     error: generationError,
     result: generationResult,
+    needPurchase,
     generateImage,
     retryGeneration,
     clearResult,
@@ -145,6 +146,7 @@ export const useAppState = () => {
     generationProgress: progress,
     generationError,
     generationResult,
+    needPurchase,
     
     // 计算状态
     canStartGeneration,

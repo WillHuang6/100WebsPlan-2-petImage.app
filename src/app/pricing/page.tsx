@@ -49,11 +49,11 @@ export default function PricingPage() {
   };
 
   const handlePurchase = async (productId: string) => {
-    // 测试模式下跳过用户验证
-    // if (!user) {
-    //   setShowAuthModal(true);
-    //   return;
-    // }
+    // 生产模式下必须登录
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
 
     setPurchaseLoading(productId);
     try {

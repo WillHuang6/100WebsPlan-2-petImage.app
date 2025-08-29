@@ -9,18 +9,18 @@ export const PRODUCT_CONFIGS = {
     type: 'onetime'
   },
   
-  // 真实产品配置 (稍后启用)
-  'prod_basic_real': {
-    credits: 3,
-    name: '基础套餐',
+  // 真实产品配置
+  'prod_2YRPVlkhs0lCrdOgVQomZT': {
+    credits: 5,
+    name: 'PetImage_4.49$',
     price: 449, // $4.49
     currency: 'USD',
     type: 'onetime'
   },
-  'prod_premium_real': {
-    credits: 20,
-    name: '专业套餐', 
-    price: 1549, // $15.49
+  'prod_nmwW7Mttc1hpOtsaO5bVs': {
+    credits: 15,
+    name: 'PetImage_14.49$', 
+    price: 1449, // $14.49
     currency: 'USD',
     type: 'onetime'
   }
@@ -48,14 +48,14 @@ export function getActiveProducts() {
   // 生产环境返回真实产品
   return [
     {
-      id: 'prod_basic_real',
-      ...PRODUCT_CONFIGS['prod_basic_real'],
-      description: '适合个人用户，可生成3张高质量AI宠物图片'
+      id: 'prod_2YRPVlkhs0lCrdOgVQomZT',
+      ...PRODUCT_CONFIGS['prod_2YRPVlkhs0lCrdOgVQomZT'],
+      description: '基础套餐，可生成5张高质量AI宠物图片'
     },
     {
-      id: 'prod_premium_real', 
-      ...PRODUCT_CONFIGS['prod_premium_real'],
-      description: '专业用户选择，可生成20张高质量AI宠物图片'
+      id: 'prod_nmwW7Mttc1hpOtsaO5bVs', 
+      ...PRODUCT_CONFIGS['prod_nmwW7Mttc1hpOtsaO5bVs'],
+      description: '专业套餐，可生成15张高质量AI宠物图片，更超值的选择'
     }
   ];
 }

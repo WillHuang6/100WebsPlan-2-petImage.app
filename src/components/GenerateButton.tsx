@@ -15,6 +15,9 @@ interface GenerateButtonProps {
   className?: string
   selectedTemplate?: Template | null
   selectedImage?: File | null
+  error?: string | null
+  needPurchase?: boolean
+  onClearError?: () => void
 }
 
 export const GenerateButton: React.FC<GenerateButtonProps> = ({
@@ -24,7 +27,10 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   loadingProgress = 0,
   className,
   selectedTemplate,
-  selectedImage
+  selectedImage,
+  error,
+  needPurchase = false,
+  onClearError
 }) => {
   const { user } = useAuth()
   const { openAuthModal, setGuestSelectedTemplate, setGuestSelectedImage } = useApp()
@@ -132,10 +138,56 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
         )}
         
         {/* Estimated Time */}
-        {!isDisabled && !isLoading && (
+        {!isDisabled && !isLoading && !error && (
           <p className="mt-4 text-sm text-gray-500">
             ⚡ Estimated generation time: 10-15 seconds
           </p>
+        )}
+        
+        {/* Error Display */}
+        {error && (
+          <div className="mt-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-grow">
+                  <h3 className="font-medium text-red-900 mb-1">Generation Failed</h3>
+                  <p className="text-red-700 text-sm mb-3">{error}</p>
+                  <div className="flex gap-2">
+                    {needPurchase ? (
+                      <Button
+                        size="sm"
+                        onClick={() => window.location.href = '/pricing'}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        💳 Go to Pricing
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={onGenerate}
+                        disabled={isDisabled}
+                      >
+                        🔄 Try Again
+                      </Button>
+                    )}
+                    {onClearError && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={onClearError}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Dismiss
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </section>

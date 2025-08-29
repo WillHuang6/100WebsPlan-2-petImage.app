@@ -16,6 +16,7 @@ export interface GenerationState {
   progress: number
   error: string | null
   result: GenerationResult | null
+  needPurchase: boolean
 }
 
 export const useImageGeneration = () => {
@@ -23,7 +24,8 @@ export const useImageGeneration = () => {
     isGenerating: false,
     progress: 0,
     error: null,
-    result: null
+    result: null,
+    needPurchase: false
   })
 
   const generateImage = useCallback(async (template: Template, imageFile: File) => {
@@ -32,7 +34,8 @@ export const useImageGeneration = () => {
       isGenerating: true,
       progress: 0,
       error: null,
-      result: null
+      result: null,
+      needPurchase: false
     }))
 
     try {
@@ -65,6 +68,17 @@ export const useImageGeneration = () => {
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (response.status === 402 || errorData.needPurchase) {
+          // Credits不足错误
+          setState({
+            isGenerating: false,
+            progress: 0,
+            error: errorData.message || 'Credits不足，请先购买套餐',
+            result: null,
+            needPurchase: true
+          })
+          return
+        }
         throw new Error(errorData.message || 'Generation failed')
       }
 
@@ -83,7 +97,8 @@ export const useImageGeneration = () => {
         isGenerating: false,
         progress: 100,
         error: null,
-        result
+        result,
+        needPurchase: false
       })
 
       return result
@@ -94,7 +109,8 @@ export const useImageGeneration = () => {
         isGenerating: false,
         progress: 0,
         error: error instanceof Error ? error.message : 'Generation failed',
-        result: null
+        result: null,
+        needPurchase: false
       })
       throw error
     }
@@ -109,14 +125,16 @@ export const useImageGeneration = () => {
       isGenerating: false,
       progress: 0,
       error: null,
-      result: null
+      result: null,
+      needPurchase: false
     })
   }, [])
 
   const clearError = useCallback(() => {
     setState(prev => ({
       ...prev,
-      error: null
+      error: null,
+      needPurchase: false
     }))
   }, [])
 

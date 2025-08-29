@@ -21,6 +21,7 @@ export default function Home() {
     generationProgress,
     generationError,
     generationResult,
+    needPurchase,
     canStartGeneration,
     handleTemplateSelect,
     handleImageSelect,
@@ -111,45 +112,13 @@ export default function Home() {
                     loadingProgress={generationProgress}
                     selectedTemplate={selectedTemplate}
                     selectedImage={selectedImage}
+                    error={generationError}
+                    needPurchase={needPurchase}
+                    onClearError={clearError}
                   />
                 </div>
               </div>
               
-              {/* Error Display */}
-              {generationError && (
-                <div className="max-w-2xl mx-auto mt-6">
-                  <Card className="border-red-200 bg-red-50">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div className="flex-grow">
-                          <h3 className="font-medium text-red-900 mb-1">Generation Failed</h3>
-                          <p className="text-red-700 text-sm mb-3">{generationError}</p>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={handleRetryGeneration}
-                              disabled={!canStartGeneration}
-                            >
-                              🔄 Try Again
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={clearError}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              Dismiss
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
             </>
           )}
         </main>

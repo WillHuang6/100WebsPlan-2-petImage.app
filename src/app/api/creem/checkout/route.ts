@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     
     console.log('请求体:', requestBody);
     
-    const creemResponse = await fetch('https://api.creem.io/v1/checkouts', {
+    const creemResponse = await fetch('https://test-api.creem.io/v1/checkouts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

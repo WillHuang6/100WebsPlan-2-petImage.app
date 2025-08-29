@@ -99,7 +99,7 @@ async function handlePurchaseCompleted(data: any) {
       console.log('处理购买记录...');
       
       // 1. 查找或创建用户profile
-      const profile = await prisma.profiles.upsert({
+      const profile = await prisma.profile.upsert({
         where: { email: customerEmail },
         update: { updated_at: new Date() },
         create: {
@@ -144,7 +144,7 @@ async function handlePurchaseCompleted(data: any) {
           }
         }),
         // 更新用户credits
-        prisma.profiles.update({
+        prisma.profile.update({
           where: { id: profile.id },
           data: {
             credits: { increment: productConfig.credits },
@@ -192,7 +192,7 @@ async function handleSubscriptionActive(data: any) {
       console.log('处理订阅激活...');
       
       // 创建或更新用户profile
-      const profile = await prisma.profiles.upsert({
+      const profile = await prisma.profile.upsert({
         where: { email: customerEmail },
         update: { updated_at: new Date() },
         create: {
@@ -207,7 +207,7 @@ async function handleSubscriptionActive(data: any) {
       
       // 处理订阅激活（如果是付费订阅，添加credits）
       if (productConfig.credits > 0) {
-        await prisma.profiles.update({
+        await prisma.profile.update({
           where: { id: profile.id },
           data: {
             credits: { increment: productConfig.credits },

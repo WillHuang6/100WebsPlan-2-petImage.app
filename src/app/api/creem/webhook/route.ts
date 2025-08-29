@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { creem } from '@/lib/creem';
-import { Client } from 'pg';
+import { prisma } from '@/lib/prisma';
 import { getProductConfig } from '@/lib/products';
 import crypto from 'crypto';
 
@@ -94,113 +94,71 @@ async function handlePurchaseCompleted(data: any) {
       return;
     }
     
-    // 使用原生PostgreSQL客户端，优化连接参数
-    const databaseUrl = process.env.DATABASE_URL;
-    const connectionString = databaseUrl?.includes('sslmode=') 
-      ? databaseUrl 
-      : `${databaseUrl}${databaseUrl?.includes('?') ? '&' : '?'}sslmode=require`;
-    
-    const client = new Client({
-      connectionString,
-      connectionTimeoutMillis: 5000,  // 5秒连接超时
-      statement_timeout: 15000,       // 15秒语句超时
-      ssl: {
-        rejectUnauthorized: false
-      },
-    });
-    
+    // 使用Prisma客户端处理数据库操作
     try {
-      console.log('正在连接数据库...');
-      await client.connect();
-      console.log('数据库连接成功');
+      console.log('处理购买记录...');
       
-      // 开始事务
-      await client.query('BEGIN');
-      console.log('事务开始');
+      // 1. 查找或创建用户profile
+      const profile = await prisma.profiles.upsert({
+        where: { email: customerEmail },
+        update: { updated_at: new Date() },
+        create: {
+          email: customerEmail,
+          display_name: data.customer?.name || 'User',
+          credits: 0,
+          total_credits: 0,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
       
-      // 1. 使用UPSERT操作查找或创建用户profile
-      const upsertProfileQuery = `
-        INSERT INTO profiles (email, display_name, credits, total_credits, created_at, updated_at)
-        VALUES ($1, $2, 0, 0, NOW(), NOW())
-        ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
-        RETURNING id, email, display_name, credits, total_credits
-      `;
-      const profileResult = await client.query(upsertProfileQuery, [
-        customerEmail,
-        data.customer?.name || 'User'
-      ]);
-      
-      const profile = profileResult.rows[0];
       console.log('用户profile ID:', profile.id);
       
-      // 2. 使用单一UPSERT操作处理购买记录和更新credits
-      const upsertPurchaseQuery = `
-        WITH purchase_insert AS (
-          INSERT INTO purchase (
-            id, user_id, product_id, product_name, amount, currency,
-            credits, provider_customer_id, transaction_id, status,
-            created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'completed', NOW(), NOW())
-          ON CONFLICT (id) DO NOTHING
-          RETURNING credits
-        ),
-        credit_update AS (
-          UPDATE profiles 
-          SET 
-            credits = credits + COALESCE((SELECT credits FROM purchase_insert), 0),
-            total_credits = total_credits + COALESCE((SELECT credits FROM purchase_insert), 0),
-            updated_at = NOW()
-          WHERE id = $2
-          RETURNING credits
-        )
-        SELECT 
-          (SELECT COUNT(*) FROM purchase_insert) as inserted,
-          (SELECT credits FROM credit_update) as new_credits
-      `;
+      // 2. 检查购买记录是否已存在
+      const existingPurchase = await prisma.purchase.findUnique({
+        where: { id: checkoutId }
+      });
       
-      const result = await client.query(upsertPurchaseQuery, [
-        checkoutId,
-        profile.id,
-        productId,
-        productConfig.name,
-        amount || productConfig.price,
-        productConfig.currency,
-        productConfig.credits,
-        customerId,
-        transactionId
-      ]);
-      
-      const { inserted, new_credits } = result.rows[0];
-      if (inserted > 0) {
-        console.log('购买处理成功，Credits已更新:', new_credits);
-      } else {
+      if (existingPurchase) {
         console.log('购买记录已存在，跳过处理:', checkoutId);
+        return;
       }
       
-      // 提交事务
-      await client.query('COMMIT');
-      console.log('事务提交成功');
+      // 3. 使用事务创建购买记录和更新credits
+      await prisma.$transaction([
+        // 创建购买记录
+        prisma.purchase.create({
+          data: {
+            id: checkoutId,
+            user_id: profile.id,
+            product_id: productId,
+            product_name: productConfig.name,
+            amount: amount || productConfig.price,
+            currency: productConfig.currency,
+            credits: productConfig.credits,
+            provider_customer_id: customerId,
+            transaction_id: transactionId,
+            status: 'completed',
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        }),
+        // 更新用户credits
+        prisma.profiles.update({
+          where: { id: profile.id },
+          data: {
+            credits: { increment: productConfig.credits },
+            total_credits: { increment: productConfig.credits },
+            updated_at: new Date()
+          }
+        })
+      ]);
       
-      console.log('购买处理成功:', checkoutId);
+      console.log('购买处理成功，添加Credits:', productConfig.credits);
       
     } catch (dbError) {
       console.error('数据库操作错误:', dbError);
-      try {
-        // 回滚事务
-        await client.query('ROLLBACK');
-        console.log('事务已回滚');
-      } catch (rollbackError) {
-        console.error('回滚失败:', rollbackError);
-      }
       throw dbError;
-    } finally {
-      try {
-        // 关闭连接
-        await client.end();
-        console.log('数据库连接已关闭');
-      } catch (endError) {
-        console.error('关闭连接失败:', endError);
-      }
     }
     
   } catch (error) {
@@ -229,64 +187,41 @@ async function handleSubscriptionActive(data: any) {
       return;
     }
     
-    const databaseUrl = process.env.DATABASE_URL;
-    const connectionString = databaseUrl?.includes('sslmode=') 
-      ? databaseUrl 
-      : `${databaseUrl}${databaseUrl?.includes('?') ? '&' : '?'}sslmode=require`;
-    
-    const client = new Client({
-      connectionString,
-      connectionTimeoutMillis: 5000,
-      statement_timeout: 15000,
-      ssl: {
-        rejectUnauthorized: false
-      },
-    });
-    
+    // 使用Prisma客户端处理订阅激活
     try {
-      await client.connect();
-      await client.query('BEGIN');
+      console.log('处理订阅激活...');
       
       // 创建或更新用户profile
-      const upsertProfileQuery = `
-        INSERT INTO profiles (email, display_name, credits, total_credits, created_at, updated_at)
-        VALUES ($1, $2, 0, 0, NOW(), NOW())
-        ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
-        RETURNING id, email, display_name, credits, total_credits
-      `;
-      const profileResult = await client.query(upsertProfileQuery, [
-        customerEmail,
-        data.customer?.name || 'User'
-      ]);
-      
-      const profile = profileResult.rows[0];
+      const profile = await prisma.profiles.upsert({
+        where: { email: customerEmail },
+        update: { updated_at: new Date() },
+        create: {
+          email: customerEmail,
+          display_name: data.customer?.name || 'User',
+          credits: 0,
+          total_credits: 0,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
       
       // 处理订阅激活（如果是付费订阅，添加credits）
       if (productConfig.credits > 0) {
-        const updateCreditsQuery = `
-          UPDATE profiles 
-          SET 
-            credits = credits + $1,
-            total_credits = total_credits + $2,
-            updated_at = NOW()
-          WHERE id = $3
-        `;
-        
-        await client.query(updateCreditsQuery, [
-          productConfig.credits,
-          productConfig.credits,
-          profile.id
-        ]);
+        await prisma.profiles.update({
+          where: { id: profile.id },
+          data: {
+            credits: { increment: productConfig.credits },
+            total_credits: { increment: productConfig.credits },
+            updated_at: new Date()
+          }
+        });
       }
       
-      await client.query('COMMIT');
       console.log('订阅激活处理成功:', subscriptionId);
       
     } catch (dbError) {
-      await client.query('ROLLBACK');
+      console.error('数据库操作错误:', dbError);
       throw dbError;
-    } finally {
-      await client.end();
     }
     
   } catch (error) {

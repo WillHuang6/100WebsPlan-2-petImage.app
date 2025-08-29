@@ -11,8 +11,8 @@ interface Product {
     amount: number;
     currency: string;
   };
-  type: 'subscription' | 'one_time';
-  interval?: string;
+  type: 'onetime' | 'subscription';
+  credits?: number;
 }
 
 interface ProductCardProps {
@@ -30,11 +30,7 @@ export function ProductCard({ product, onPurchase, loading }: ProductCardProps) 
   };
 
   const getPriceText = () => {
-    const price = formatPrice(product.price.amount, product.price.currency);
-    if (product.type === 'subscription') {
-      return `${price}/${product.interval || 'month'}`;
-    }
-    return price;
+    return formatPrice(product.price.amount, product.price.currency);
   };
 
   return (
@@ -46,7 +42,10 @@ export function ProductCard({ product, onPurchase, loading }: ProductCardProps) 
       <CardContent>
         <div className="text-3xl font-bold">{getPriceText()}</div>
         <div className="text-sm text-gray-500 mt-1">
-          {product.type === 'subscription' ? '订阅服务' : '一次性购买'}
+          {product.credits && `获得 ${product.credits} 张图片生成次数`}
+        </div>
+        <div className="text-sm text-gray-400 mt-1">
+          一次性购买
         </div>
       </CardContent>
       <CardFooter>

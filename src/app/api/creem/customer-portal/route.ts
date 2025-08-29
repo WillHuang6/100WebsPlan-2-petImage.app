@@ -15,27 +15,25 @@ export async function POST() {
       );
     }
 
-    // 查找用户的订阅以获取客户ID
-    const subscription = await prisma.subscription.findFirst({
-      where: {
-        userId: user.email || user.id,
-      },
+    // 查找用户的购买记录以获取客户ID
+    const userRecord = await prisma.user.findUnique({
+      where: { email: user.email! },
+      include: {
+        purchases: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
     });
 
-    if (!subscription) {
+    if (!userRecord || userRecord.purchases.length === 0) {
       return NextResponse.json(
-        { error: '未找到有效订阅' },
+        { error: '未找到购买记录' },
         { status: 404 }
       );
     }
 
-    // 创建客户门户链接 (暂时跳过，需要实际API文档)
-    // const portalUrl = await creem.customerPortal.create({
-    //   customerId: subscription.providerCustomerId,
-    //   returnUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000/account',
-    // });
-
-    // 暂时返回当前页面
+    // 一次性购买模式下，直接返回账户页面
     return NextResponse.json({ 
       url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000/account' 
     });

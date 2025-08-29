@@ -13,8 +13,8 @@ interface Product {
     amount: number;
     currency: string;
   };
-  type: 'subscription' | 'one_time';
-  interval?: string;
+  type: 'onetime' | 'subscription';
+  credits?: number;
 }
 
 export default function PricingPage() {

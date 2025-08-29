@@ -14,28 +14,27 @@ export async function GET() {
       );
     }
 
-    // 使用邮箱查找用户订阅（临时方案，实际应该用正确的用户ID映射）
-    const subscriptions = await prisma.subscription.findMany({
-      where: {
-        userId: user.email || user.id,
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
+    // 查找用户购买记录
+    const userRecord = await prisma.user.findUnique({
+      where: { email: user.email! },
+      include: {
+        purchases: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     });
 
-    const purchases = await prisma.oneTimePurchase.findMany({
-      where: {
-        userId: user.email || user.id,
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
-    });
+    if (!userRecord) {
+      return NextResponse.json({
+        purchases: [],
+        credits: 0
+      });
+    }
 
     return NextResponse.json({
-      subscriptions,
-      purchases,
+      purchases: userRecord.purchases,
+      credits: userRecord.credits,
+      totalCredits: userRecord.totalCredits
     });
   } catch (error) {
     console.error('获取用户订阅失败:', error);

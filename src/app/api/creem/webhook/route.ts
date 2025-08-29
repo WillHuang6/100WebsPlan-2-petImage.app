@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { creem } from '@/lib/creem';
-import { PrismaClient } from '@prisma/client';
+import { Client } from 'pg';
 import { getProductConfig } from '@/lib/products';
 
 export async function POST(request: NextRequest) {
@@ -66,79 +66,103 @@ async function handlePurchaseCompleted(data: any) {
       return;
     }
     
-    // 创建独立的Prisma Client避免prepared statement冲突
-    const webhookPrisma = new PrismaClient();
+    // 使用原生PostgreSQL客户端完全绕过Prisma
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL
+    });
     
     try {
-      // 使用原始SQL查询避免prepared statement问题
+      await client.connect();
+      
+      // 开始事务
+      await client.query('BEGIN');
       
       // 1. 查找或创建用户profile
-      let profileResult = await webhookPrisma.$queryRaw`
-        SELECT id, email, display_name, credits, total_credits 
-        FROM profiles 
-        WHERE email = ${customerEmail}
-      ` as any[];
+      const profileQuery = 'SELECT id, email, display_name, credits, total_credits FROM profiles WHERE email = $1';
+      const profileResult = await client.query(profileQuery, [customerEmail]);
       
-      let profile = profileResult[0];
+      let profile = profileResult.rows[0];
       
       if (!profile) {
         // 创建新用户profile
-        const newProfileResult = await webhookPrisma.$queryRaw`
+        const insertProfileQuery = `
           INSERT INTO profiles (email, display_name, credits, total_credits, created_at, updated_at)
-          VALUES (${customerEmail}, ${data.object?.customer?.name || 'User'}, 0, 0, NOW(), NOW())
+          VALUES ($1, $2, 0, 0, NOW(), NOW())
           RETURNING id, email, display_name, credits, total_credits
-        ` as any[];
+        `;
+        const newProfileResult = await client.query(insertProfileQuery, [
+          customerEmail,
+          data.object?.customer?.name || 'User'
+        ]);
         
-        profile = newProfileResult[0];
+        profile = newProfileResult.rows[0];
         console.log('创建新用户profile:', profile.id);
       }
       
       // 2. 检查购买记录是否已存在
-      const existingPurchaseResult = await webhookPrisma.$queryRaw`
-        SELECT id FROM purchase WHERE id = ${checkoutId}
-      ` as any[];
+      const existingPurchaseQuery = 'SELECT id FROM purchase WHERE id = $1';
+      const existingPurchaseResult = await client.query(existingPurchaseQuery, [checkoutId]);
       
-      if (existingPurchaseResult.length > 0) {
+      if (existingPurchaseResult.rows.length > 0) {
         console.log('购买记录已存在，跳过处理:', checkoutId);
+        await client.query('ROLLBACK');
         return;
       }
       
-      // 3. 使用原始SQL在事务中处理
-      await webhookPrisma.$transaction(async (tx) => {
-        // 插入购买记录
-        await tx.$executeRaw`
-          INSERT INTO purchase (
-            id, user_id, product_id, product_name, amount, currency, 
-            credits, provider_customer_id, transaction_id, status, 
-            created_at, updated_at
-          ) VALUES (
-            ${checkoutId}, ${profile.id}::uuid, ${productId}, ${productConfig.name},
-            ${amount || productConfig.price}, ${productConfig.currency},
-            ${productConfig.credits}, ${customerId}, ${transactionId}, 'completed',
-            NOW(), NOW()
-          )
-        `;
-        
-        // 更新用户credits
-        await tx.$executeRaw`
-          UPDATE profiles 
-          SET 
-            credits = credits + ${productConfig.credits},
-            total_credits = total_credits + ${productConfig.credits},
-            updated_at = NOW()
-          WHERE id = ${profile.id}::uuid
-        `;
-        
-        console.log('购买处理成功:', {
-          purchaseId: checkoutId,
-          profileId: profile.id,
-          creditsAdded: productConfig.credits
-        });
+      // 3. 插入购买记录
+      const insertPurchaseQuery = `
+        INSERT INTO purchase (
+          id, user_id, product_id, product_name, amount, currency,
+          credits, provider_customer_id, transaction_id, status,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      `;
+      
+      await client.query(insertPurchaseQuery, [
+        checkoutId,
+        profile.id,
+        productId,
+        productConfig.name,
+        amount || productConfig.price,
+        productConfig.currency,
+        productConfig.credits,
+        customerId,
+        transactionId,
+        'completed'
+      ]);
+      
+      // 4. 更新用户credits
+      const updateCreditsQuery = `
+        UPDATE profiles 
+        SET 
+          credits = credits + $1,
+          total_credits = total_credits + $2,
+          updated_at = NOW()
+        WHERE id = $3
+      `;
+      
+      await client.query(updateCreditsQuery, [
+        productConfig.credits,
+        productConfig.credits,
+        profile.id
+      ]);
+      
+      // 提交事务
+      await client.query('COMMIT');
+      
+      console.log('购买处理成功:', {
+        purchaseId: checkoutId,
+        profileId: profile.id,
+        creditsAdded: productConfig.credits
       });
       
+    } catch (dbError) {
+      // 回滚事务
+      await client.query('ROLLBACK');
+      throw dbError;
     } finally {
-      // 确保断开连接
-      await webhookPrisma.$disconnect();
+      // 关闭连接
+      await client.end();
     }
     
   } catch (error) {

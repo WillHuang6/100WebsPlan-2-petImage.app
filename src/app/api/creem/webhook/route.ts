@@ -99,6 +99,9 @@ async function handlePurchaseCompleted(data: any) {
       connectionString: process.env.DATABASE_URL,
       connectionTimeoutMillis: 5000,  // 5秒连接超时
       statement_timeout: 15000,       // 15秒语句超时
+      ssl: process.env.NODE_ENV === 'production' ? {
+        rejectUnauthorized: false
+      } : false,
     });
     
     try {
@@ -225,6 +228,9 @@ async function handleSubscriptionActive(data: any) {
       connectionString: process.env.DATABASE_URL,
       connectionTimeoutMillis: 5000,
       statement_timeout: 15000,
+      ssl: process.env.NODE_ENV === 'production' ? {
+        rejectUnauthorized: false
+      } : false,
     });
     
     try {

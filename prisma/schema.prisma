@@ -13,39 +13,47 @@ model User {
   name            String?
   emailVerified   Boolean           @default(false)
   image           String?
+  credits         Int               @default(0)     // 剩余图片生成次数
+  totalCredits    Int               @default(0)     // 历史总购买次数
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   sessions        Session[]
   accounts        Account[]
-  Subscription    Subscription[]
-  OneTimePurchase OneTimePurchase[]
+  purchases       Purchase[]
+  usages          Usage[]
 
   @@map("user")
 }
 
-model Subscription {
+model Purchase {
   id                 String   @id
   userId             String
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product            String
+  productId          String
+  productName        String
+  amount             Int      // 金额(分)
+  currency           String   @default("USD")
+  credits            Int      // 此次购买获得的图片次数
   providerCustomerId String
-  status             String
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  transactionId      String?  // Creem交易ID
+  status             String   @default("completed")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  @@map("subscription")
+  @@map("purchase")
 }
 
-model OneTimePurchase {
-  id                 String   @id
-  userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product            String
-  providerCustomerId String
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+model Usage {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl    String?  // 生成的图片URL
+  prompt      String?  // 用户输入的提示词
+  model       String?  // 使用的AI模型
+  creditsUsed Int      @default(1)  // 消耗的次数(通常为1)
+  createdAt   DateTime @default(now())
 
-  @@map("onetimepurchase")
+  @@map("usage")
 }
 
 model Session {

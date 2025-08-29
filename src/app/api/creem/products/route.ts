@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
+import { getActiveProducts } from '@/lib/products';
 
 export async function GET() {
   try {
-    // 使用你在 Creem 中创建的实际产品信息
-    const products = [
-      {
-        id: 'prod_2sHye4uIbTVNvIll3ix9sL',
-        name: 'PetImage 测试版',
-        description: '测试模式下的AI宠物图像生成服务',
-        price: {
-          amount: 100,  // $1.00 for testing
-          currency: 'USD'
-        },
-        type: 'subscription',
-        interval: 'month'
-      }
-    ];
+    const products = getActiveProducts().map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: {
+        amount: product.price,
+        currency: product.currency
+      },
+      type: product.type,
+      credits: product.credits // 添加credits信息给前端显示
+    }));
 
     return NextResponse.json(products);
   } catch (error) {

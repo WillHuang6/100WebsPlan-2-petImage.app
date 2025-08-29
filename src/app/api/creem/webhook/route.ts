@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { creem } from '@/lib/creem';
 import { prisma } from '@/lib/prisma';
+import { getProductConfig } from '@/lib/products';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,13 +23,6 @@ export async function POST(request: NextRequest) {
 
     // 处理不同的事件类型 - 使用 Creem 实际的事件名称
     switch (event.eventType || event.type) {
-      case 'subscription.active':
-      case 'subscription.paid':
-        await handleSubscriptionCreated(event.data || event);
-        break;
-      case 'subscription.canceled':  // 注意是单个 l
-        await handleSubscriptionCancelled(event.data || event);
-        break;
       case 'checkout.completed':
         await handlePurchaseCompleted(event.data || event);
         break;
@@ -47,78 +41,88 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleSubscriptionCreated(data: any) {
-  try {
-    console.log('处理订阅激活事件:', data);
-    
-    // 根据 Creem 的实际数据结构调整字段映射
-    const subscriptionData = {
-      id: data.subscription?.id || data.id || `sub_${Date.now()}`,
-      userId: data.customer?.email || data.customerEmail || data.metadata?.userId || 'unknown',
-      product: data.product?.id || data.productId || data.subscription?.productId || 'unknown',
-      providerCustomerId: data.customer?.id || data.customerId || 'unknown',
-      status: 'active',
-    };
-    
-    // 使用 upsert 避免重复创建
-    await prisma.subscription.upsert({
-      where: { id: subscriptionData.id },
-      update: { status: subscriptionData.status },
-      create: subscriptionData,
-    });
-    
-    console.log('订阅创建/更新成功:', subscriptionData.id);
-  } catch (error) {
-    console.error('处理订阅激活失败:', error);
-    console.error('原始数据:', data);
-  }
-}
-
-async function handleSubscriptionCancelled(data: any) {
-  try {
-    console.log('处理订阅取消事件:', data);
-    
-    const subscriptionId = data.subscription?.id || data.id;
-    
-    if (!subscriptionId) {
-      console.error('无法获取订阅ID:', data);
-      return;
-    }
-    
-    await prisma.subscription.updateMany({
-      where: { id: subscriptionId },
-      data: { status: 'cancelled' },
-    });
-    
-    console.log('订阅取消成功:', subscriptionId);
-  } catch (error) {
-    console.error('处理订阅取消失败:', error);
-    console.error('原始数据:', data);
-  }
-}
 
 async function handlePurchaseCompleted(data: any) {
   try {
     console.log('处理结账完成事件:', data);
     
-    // 根据实际的Creem数据结构调整
-    const purchaseData = {
-      id: data.object?.id || data.id || `purchase_${Date.now()}`,
-      userId: data.object?.customer?.email || 'unknown',
-      product: data.object?.product?.id || 'unknown',
-      providerCustomerId: data.object?.customer?.id || 'unknown',
-    };
+    // 提取关键信息
+    const checkoutId = data.object?.id || data.id;
+    const customerEmail = data.object?.customer?.email;
+    const customerId = data.object?.customer?.id;
+    const productId = data.object?.product?.id;
+    const transactionId = data.object?.order?.transaction;
+    const amount = data.object?.order?.amount || data.object?.product?.price;
     
-    // 使用 upsert 避免重复创建
-    await prisma.oneTimePurchase.upsert({
-      where: { id: purchaseData.id },
-      update: { product: purchaseData.product },
-      create: purchaseData,
+    if (!checkoutId || !customerEmail || !productId) {
+      console.error('关键信息缺失:', { checkoutId, customerEmail, productId });
+      return;
+    }
+    
+    // 获取产品配置
+    const productConfig = getProductConfig(productId);
+    if (!productConfig) {
+      console.error('未找到产品配置:', productId);
+      return;
+    }
+    
+    // 使用数据库事务确保数据一致性
+    await prisma.$transaction(async (tx) => {
+      // 1. 查找或创建用户
+      let user = await tx.user.findUnique({
+        where: { email: customerEmail }
+      });
+      
+      if (!user) {
+        user = await tx.user.create({
+          data: {
+            email: customerEmail,
+            name: data.object?.customer?.name || 'User',
+            emailVerified: true
+          }
+        });
+        console.log('创建新用户:', user.id);
+      }
+      
+      // 2. 创建购买记录
+      const purchase = await tx.purchase.upsert({
+        where: { id: checkoutId },
+        update: {
+          status: 'completed'
+        },
+        create: {
+          id: checkoutId,
+          userId: user.id,
+          productId: productId,
+          productName: productConfig.name,
+          amount: amount || productConfig.price,
+          currency: productConfig.currency,
+          credits: productConfig.credits,
+          providerCustomerId: customerId,
+          transactionId: transactionId,
+          status: 'completed'
+        }
+      });
+      
+      // 3. 增加用户credits
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          credits: { increment: productConfig.credits },
+          totalCredits: { increment: productConfig.credits }
+        }
+      });
+      
+      console.log('购买处理成功:', {
+        purchaseId: purchase.id,
+        userId: user.id,
+        creditsAdded: productConfig.credits
+      });
     });
     
-    console.log('一次性购买记录创建/更新成功:', purchaseData.id);
   } catch (error) {
     console.error('处理结账完成失败:', error);
     console.error('原始数据:', data);
+    throw error; // 让webhook返回错误状态，Creem会重试
   }
 }

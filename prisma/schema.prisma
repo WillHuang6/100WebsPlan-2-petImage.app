@@ -7,94 +7,58 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id              String            @id @default(uuid())
-  email           String            @unique
-  name            String?
-  emailVerified   Boolean           @default(false)
-  image           String?
-  credits         Int               @default(0)     // 剩余图片生成次数
-  totalCredits    Int               @default(0)     // 历史总购买次数
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  sessions        Session[]
-  accounts        Account[]
-  purchases       Purchase[]
-  usages          Usage[]
+// 使用现有的profiles表作为用户表
+model Profile {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String?    @unique
+  display_name  String?
+  avatar_url    String?
+  credits       Int        @default(0)
+  total_credits Int        @default(0) 
+  created_at    DateTime   @default(now()) @db.Timestamptz
+  updated_at    DateTime   @default(now()) @updatedAt @db.Timestamptz
+  
+  // 关联关系
+  purchases     Purchase[]
+  generations   Generation[]
 
-  @@map("user")
+  @@map("profiles")
 }
 
+// 购买记录表
 model Purchase {
-  id                 String   @id
-  userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId          String
-  productName        String
-  amount             Int      // 金额(分)
-  currency           String   @default("USD")
-  credits            Int      // 此次购买获得的图片次数
-  providerCustomerId String
-  transactionId      String?  // Creem交易ID
-  status             String   @default("completed")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                    String   @id
+  user_id               String   @db.Uuid
+  user                  Profile  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product_id            String
+  product_name          String
+  amount                Int      // 金额(分)
+  currency              String   @default("USD")
+  credits               Int      // 此次购买获得的图片次数
+  provider_customer_id  String
+  transaction_id        String?  // Creem交易ID
+  status                String   @default("completed")
+  created_at            DateTime @default(now()) @db.Timestamptz
+  updated_at            DateTime @default(now()) @updatedAt @db.Timestamptz
 
   @@map("purchase")
 }
 
-model Usage {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  imageUrl    String?  // 生成的图片URL
-  prompt      String?  // 用户输入的提示词
-  model       String?  // 使用的AI模型
-  creditsUsed Int      @default(1)  // 消耗的次数(通常为1)
-  createdAt   DateTime @default(now())
+// 使用现有的generations表作为使用记录
+model Generation {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String   @db.Uuid
+  user                  Profile  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  template_id           String?
+  original_image_url    String?
+  generated_image_url   String?
+  status                String?
+  error_message         String?
+  share_token           String?
+  is_public             Boolean?
+  created_at            DateTime @default(now()) @db.Timestamptz
+  expires_at            DateTime? @db.Timestamptz
 
-  @@map("usage")
+  @@map("generations")
 }
 
-model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("session")
-}
-
-model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  @@map("account")
-}
-
-model Verification {
-  id         String    @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime? @default(now())
-  updatedAt  DateTime? @updatedAt
-
-  @@map("verification")
-}

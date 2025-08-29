@@ -68,20 +68,19 @@ async function handlePurchaseCompleted(data: any) {
     
     // 使用数据库事务确保数据一致性
     await prisma.$transaction(async (tx) => {
-      // 1. 查找或创建用户
-      let user = await tx.user.findUnique({
+      // 1. 查找或创建用户profile
+      let profile = await tx.profile.findUnique({
         where: { email: customerEmail }
       });
       
-      if (!user) {
-        user = await tx.user.create({
+      if (!profile) {
+        profile = await tx.profile.create({
           data: {
             email: customerEmail,
-            name: data.object?.customer?.name || 'User',
-            emailVerified: true
+            display_name: data.object?.customer?.name || 'User'
           }
         });
-        console.log('创建新用户:', user.id);
+        console.log('创建新用户profile:', profile.id);
       }
       
       // 2. 创建购买记录
@@ -92,30 +91,30 @@ async function handlePurchaseCompleted(data: any) {
         },
         create: {
           id: checkoutId,
-          userId: user.id,
-          productId: productId,
-          productName: productConfig.name,
+          user_id: profile.id,
+          product_id: productId,
+          product_name: productConfig.name,
           amount: amount || productConfig.price,
           currency: productConfig.currency,
           credits: productConfig.credits,
-          providerCustomerId: customerId,
-          transactionId: transactionId,
+          provider_customer_id: customerId,
+          transaction_id: transactionId,
           status: 'completed'
         }
       });
       
       // 3. 增加用户credits
-      await tx.user.update({
-        where: { id: user.id },
+      await tx.profile.update({
+        where: { id: profile.id },
         data: {
           credits: { increment: productConfig.credits },
-          totalCredits: { increment: productConfig.credits }
+          total_credits: { increment: productConfig.credits }
         }
       });
       
       console.log('购买处理成功:', {
         purchaseId: purchase.id,
-        userId: user.id,
+        profileId: profile.id,
         creditsAdded: productConfig.credits
       });
     });

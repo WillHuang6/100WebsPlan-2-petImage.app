@@ -15,16 +15,16 @@ export async function GET() {
     }
 
     // 查找用户购买记录
-    const userRecord = await prisma.user.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: { email: user.email! },
       include: {
         purchases: {
-          orderBy: { createdAt: 'desc' }
+          orderBy: { created_at: 'desc' }
         }
       }
     });
 
-    if (!userRecord) {
+    if (!profile) {
       return NextResponse.json({
         purchases: [],
         credits: 0
@@ -32,9 +32,9 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      purchases: userRecord.purchases,
-      credits: userRecord.credits,
-      totalCredits: userRecord.totalCredits
+      purchases: profile.purchases,
+      credits: profile.credits,
+      total_credits: profile.total_credits
     });
   } catch (error) {
     console.error('获取用户订阅失败:', error);

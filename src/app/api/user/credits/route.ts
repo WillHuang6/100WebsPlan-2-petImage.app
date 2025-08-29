@@ -15,61 +15,60 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 查询用户credits
-    const userRecord = await prisma.user.findUnique({
+    // 查询用户profile和相关数据
+    const profile = await prisma.profile.findUnique({
       where: { email: user.email! },
       select: {
         credits: true,
-        totalCredits: true,
+        total_credits: true,
         purchases: {
           select: {
             id: true,
-            productName: true,
+            product_name: true,
             credits: true,
             amount: true,
             currency: true,
-            createdAt: true
+            created_at: true
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { created_at: 'desc' },
           take: 10 // 最近10次购买记录
         },
-        usages: {
+        generations: {
           select: {
             id: true,
-            imageUrl: true,
-            prompt: true,
-            creditsUsed: true,
-            createdAt: true
+            generated_image_url: true,
+            template_id: true,
+            status: true,
+            created_at: true
           },
-          orderBy: { createdAt: 'desc' },
-          take: 20 // 最近20次使用记录
+          orderBy: { created_at: 'desc' },
+          take: 20 // 最近20次生成记录
         }
       }
     });
 
-    if (!userRecord) {
-      // 如果用户不存在，创建用户记录
-      const newUser = await prisma.user.create({
+    if (!profile) {
+      // 如果用户profile不存在，创建profile记录
+      const newProfile = await prisma.profile.create({
         data: {
           email: user.email!,
-          name: user.user_metadata?.name || user.email!.split('@')[0],
-          emailVerified: true
+          display_name: user.user_metadata?.name || user.email!.split('@')[0]
         }
       });
       
       return NextResponse.json({
         credits: 0,
-        totalCredits: 0,
+        total_credits: 0,
         purchases: [],
-        usages: []
+        generations: []
       });
     }
 
     return NextResponse.json({
-      credits: userRecord.credits,
-      totalCredits: userRecord.totalCredits,
-      purchases: userRecord.purchases,
-      usages: userRecord.usages
+      credits: profile.credits,
+      total_credits: profile.total_credits,
+      purchases: profile.purchases,
+      generations: profile.generations
     });
 
   } catch (error) {

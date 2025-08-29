@@ -16,17 +16,17 @@ export async function POST() {
     }
 
     // 查找用户的购买记录以获取客户ID
-    const userRecord = await prisma.user.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: { email: user.email! },
       include: {
         purchases: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { created_at: 'desc' },
           take: 1
         }
       }
     });
 
-    if (!userRecord || userRecord.purchases.length === 0) {
+    if (!profile || profile.purchases.length === 0) {
       return NextResponse.json(
         { error: '未找到购买记录' },
         { status: 404 }

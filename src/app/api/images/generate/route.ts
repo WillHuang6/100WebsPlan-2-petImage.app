@@ -29,23 +29,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 使用数据库事务确保credits扣除和使用记录的原子性
+    // 使用数据库事务确保credits扣除和生成记录的原子性
     const result = await prisma.$transaction(async (tx) => {
-      // 1. 检查用户credits
-      const userRecord = await tx.user.findUnique({
+      // 1. 检查用户profile和credits
+      const profile = await tx.profile.findUnique({
         where: { email: user.email! }
       });
 
-      if (!userRecord) {
-        throw new Error('用户记录不存在');
+      if (!profile) {
+        throw new Error('用户profile不存在');
       }
 
-      if (userRecord.credits < 1) {
+      if (profile.credits < 1) {
         throw new Error('credits不足，请先购买套餐');
       }
 
       // 2. 扣除credits
-      const updatedUser = await tx.user.update({
+      const updatedProfile = await tx.profile.update({
         where: { email: user.email! },
         data: {
           credits: { decrement: 1 }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       });
 
       // 3. 生成图片
-      console.log('开始生成图片，剩余credits:', updatedUser.credits);
+      console.log('开始生成图片，剩余credits:', updatedProfile.credits);
       
       // 构造完整的提示词
       const fullPrompt = `A ${style || 'realistic'} portrait of a ${petType || 'pet'}, ${prompt}, high quality, detailed`;
@@ -75,21 +75,20 @@ export async function POST(request: NextRequest) {
 
       const imageUrl = Array.isArray(output) ? output[0] : output;
 
-      // 4. 记录使用历史
-      const usage = await tx.usage.create({
+      // 4. 创建generation记录
+      const generation = await tx.generation.create({
         data: {
-          userId: userRecord.id,
-          imageUrl: imageUrl as string,
-          prompt: fullPrompt,
-          model: 'stable-diffusion',
-          creditsUsed: 1
+          user_id: profile.id,
+          generated_image_url: imageUrl as string,
+          template_id: `${petType || 'pet'}-${style || 'realistic'}`,
+          status: 'completed'
         }
       });
 
       return {
         imageUrl,
-        remainingCredits: updatedUser.credits,
-        usageId: usage.id
+        remainingCredits: updatedProfile.credits,
+        generationId: generation.id
       };
     });
 

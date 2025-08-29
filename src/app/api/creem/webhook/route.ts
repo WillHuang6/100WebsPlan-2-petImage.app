@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { creem } from '@/lib/creem';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import { getProductConfig } from '@/lib/products';
 
 export async function POST(request: NextRequest) {
@@ -66,75 +66,80 @@ async function handlePurchaseCompleted(data: any) {
       return;
     }
     
-    // 分步处理，避免prepared statement冲突
-    // 1. 查找或创建用户profile
-    let profile = await prisma.profile.findUnique({
-      where: { email: customerEmail }
-    });
+    // 创建独立的Prisma Client避免prepared statement冲突
+    const webhookPrisma = new PrismaClient();
     
-    if (!profile) {
-      try {
-        profile = await prisma.profile.create({
-          data: {
-            email: customerEmail,
-            display_name: data.object?.customer?.name || 'User'
-          }
-        });
+    try {
+      // 使用原始SQL查询避免prepared statement问题
+      
+      // 1. 查找或创建用户profile
+      let profileResult = await webhookPrisma.$queryRaw`
+        SELECT id, email, display_name, credits, total_credits 
+        FROM profiles 
+        WHERE email = ${customerEmail}
+      ` as any[];
+      
+      let profile = profileResult[0];
+      
+      if (!profile) {
+        // 创建新用户profile
+        const newProfileResult = await webhookPrisma.$queryRaw`
+          INSERT INTO profiles (email, display_name, credits, total_credits, created_at, updated_at)
+          VALUES (${customerEmail}, ${data.object?.customer?.name || 'User'}, 0, 0, NOW(), NOW())
+          RETURNING id, email, display_name, credits, total_credits
+        ` as any[];
+        
+        profile = newProfileResult[0];
         console.log('创建新用户profile:', profile.id);
-      } catch (createError) {
-        // 如果创建失败，可能是并发创建，重新查找
-        profile = await prisma.profile.findUnique({
-          where: { email: customerEmail }
-        });
-        if (!profile) {
-          throw createError; // 如果还是找不到，抛出原始错误
-        }
       }
-    }
-    
-    // 2. 检查购买记录是否已存在，避免重复处理
-    const existingPurchase = await prisma.purchase.findUnique({
-      where: { id: checkoutId }
-    });
-    
-    if (existingPurchase) {
-      console.log('购买记录已存在，跳过处理:', checkoutId);
-      return;
-    }
-    
-    // 3. 使用事务创建购买记录和更新credits
-    await prisma.$transaction(async (tx) => {
-      // 创建购买记录
-      const purchase = await tx.purchase.create({
-        data: {
-          id: checkoutId,
-          user_id: profile.id,
-          product_id: productId,
-          product_name: productConfig.name,
-          amount: amount || productConfig.price,
-          currency: productConfig.currency,
-          credits: productConfig.credits,
-          provider_customer_id: customerId,
-          transaction_id: transactionId,
-          status: 'completed'
-        }
+      
+      // 2. 检查购买记录是否已存在
+      const existingPurchaseResult = await webhookPrisma.$queryRaw`
+        SELECT id FROM purchase WHERE id = ${checkoutId}
+      ` as any[];
+      
+      if (existingPurchaseResult.length > 0) {
+        console.log('购买记录已存在，跳过处理:', checkoutId);
+        return;
+      }
+      
+      // 3. 使用原始SQL在事务中处理
+      await webhookPrisma.$transaction(async (tx) => {
+        // 插入购买记录
+        await tx.$executeRaw`
+          INSERT INTO purchase (
+            id, user_id, product_id, product_name, amount, currency, 
+            credits, provider_customer_id, transaction_id, status, 
+            created_at, updated_at
+          ) VALUES (
+            ${checkoutId}, ${profile.id}::uuid, ${productId}, ${productConfig.name},
+            ${amount || productConfig.price}, ${productConfig.currency},
+            ${productConfig.credits}, ${customerId}, ${transactionId}, 'completed',
+            NOW(), NOW()
+          )
+        `;
+        
+        // 更新用户credits
+        await tx.$executeRaw`
+          UPDATE profiles 
+          SET 
+            credits = credits + ${productConfig.credits},
+            total_credits = total_credits + ${productConfig.credits},
+            updated_at = NOW()
+          WHERE id = ${profile.id}::uuid
+        `;
+        
+        console.log('购买处理成功:', {
+          purchaseId: checkoutId,
+          profileId: profile.id,
+          creditsAdded: productConfig.credits
+        });
       });
       
-      // 增加用户credits
-      await tx.profile.update({
-        where: { id: profile.id },
-        data: {
-          credits: { increment: productConfig.credits },
-          total_credits: { increment: productConfig.credits }
-        }
-      });
-      
-      console.log('购买处理成功:', {
-        purchaseId: purchase.id,
-        profileId: profile.id,
-        creditsAdded: productConfig.credits
-      });
-    });
+    } finally {
+      // 确保断开连接
+      await webhookPrisma.$disconnect();
+    }
     
   } catch (error) {
     console.error('处理结账完成失败:', error);

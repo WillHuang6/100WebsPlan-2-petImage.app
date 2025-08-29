@@ -99,18 +99,28 @@ async function handlePurchaseCompleted(data: any) {
       console.log('处理购买记录...');
       
       // 1. 查找或创建用户profile
-      const profile = await prisma.profile.upsert({
-        where: { email: customerEmail },
-        update: { updated_at: new Date() },
-        create: {
-          email: customerEmail,
-          display_name: data.customer?.name || 'User',
-          credits: 0,
-          total_credits: 0,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
+      let profile = await prisma.profile.findFirst({
+        where: { email: customerEmail }
       });
+      
+      if (!profile) {
+        profile = await prisma.profile.create({
+          data: {
+            email: customerEmail,
+            display_name: data.customer?.name || 'User',
+            credits: 0,
+            total_credits: 0,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+      } else {
+        // 更新时间
+        profile = await prisma.profile.update({
+          where: { id: profile.id },
+          data: { updated_at: new Date() }
+        });
+      }
       
       console.log('用户profile ID:', profile.id);
       
@@ -192,18 +202,27 @@ async function handleSubscriptionActive(data: any) {
       console.log('处理订阅激活...');
       
       // 创建或更新用户profile
-      const profile = await prisma.profile.upsert({
-        where: { email: customerEmail },
-        update: { updated_at: new Date() },
-        create: {
-          email: customerEmail,
-          display_name: data.customer?.name || 'User',
-          credits: 0,
-          total_credits: 0,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
+      let profile = await prisma.profile.findFirst({
+        where: { email: customerEmail }
       });
+      
+      if (!profile) {
+        profile = await prisma.profile.create({
+          data: {
+            email: customerEmail,
+            display_name: data.customer?.name || 'User',
+            credits: 0,
+            total_credits: 0,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+      } else {
+        profile = await prisma.profile.update({
+          where: { id: profile.id },
+          data: { updated_at: new Date() }
+        });
+      }
       
       // 处理订阅激活（如果是付费订阅，添加credits）
       if (productConfig.credits > 0) {

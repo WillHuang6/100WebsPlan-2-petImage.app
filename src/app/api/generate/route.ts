@@ -4,6 +4,7 @@ import { validateImageFile } from '@/lib/imageUtils'
 import { requireAuth } from '@/lib/auth-server'
 import { createGeneration, updateGeneration, generateShareToken } from '@/lib/database'
 import { uploadToStorage, downloadFileAsBlob, generateStoragePath } from '@/lib/storage'
+import { createAdminClient } from '@/lib/supabase-server'
 import Replicate from 'replicate'
 
 // 初始化 Replicate
@@ -55,7 +56,58 @@ export async function POST(request: NextRequest) {
     console.log('User email:', user.email)
     console.log('User role:', user.role)
 
-    // 5. 创建数据库记录 (status: pending)
+    // 5. 检查用户credits并扣除
+    const supabase = createAdminClient();
+    
+    // 查找用户profile
+    const { data: profiles, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id);
+    
+    if (profileError || !profiles || profiles.length === 0) {
+      console.error('用户profile查询失败:', profileError);
+      return NextResponse.json(
+        { message: '用户profile不存在，请先完成注册' },
+        { status: 400 }
+      );
+    }
+    
+    const profile = profiles[0] as any;
+    
+    // 检查credits余额
+    if (profile.credits < 1) {
+      console.log('用户credits不足:', profile.credits);
+      return NextResponse.json(
+        { 
+          message: 'Credits不足，请先购买套餐',
+          needPurchase: true,
+          currentCredits: profile.credits 
+        },
+        { status: 402 } // Payment Required
+      );
+    }
+    
+    // 扣除1个credit
+    const { error: updateError } = await (supabase as any)
+      .from('profiles')
+      .update({
+        credits: profile.credits - 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id);
+    
+    if (updateError) {
+      console.error('扣除credits失败:', updateError);
+      return NextResponse.json(
+        { message: '扣除credits失败，请重试' },
+        { status: 500 }
+      );
+    }
+    
+    console.log(`Credits扣除成功，剩余: ${profile.credits - 1}`);
+
+    // 6. 创建数据库记录 (status: pending)
     const { generation, error: dbError } = await createGeneration({
       user_id: user.id,
       template_id: templateId,
@@ -72,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // 6. 上传原始图片到私有桶
+      // 7. 上传原始图片到私有桶
       const originalImagePath = generateStoragePath(user.id, generation.id, 'original.jpg')
       console.log('=== STORAGE DEBUG ===')
       console.log('Generation ID:', generation.id)
@@ -115,7 +167,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // 7. 更新数据库记录添加原图URL并设置为processing
+      // 8. 更新数据库记录添加原图URL并设置为processing
       await updateGeneration(generation.id, {
         original_image_url: originalImageUrl,
         status: 'processing'
@@ -123,13 +175,13 @@ export async function POST(request: NextRequest) {
 
       console.log('Calling Replicate API...')
 
-      // 8. 转换图片为base64供Replicate使用
+      // 9. 转换图片为base64供Replicate使用
       const arrayBuffer = await image.arrayBuffer()
       const base64 = Buffer.from(arrayBuffer).toString('base64')
       const mimeType = image.type
       const dataUri = `data:${mimeType};base64,${base64}`
 
-      // 9. 调用Replicate API
+      // 10. 调用Replicate API
       const input = {
         prompt: template.prompt,
         image_input: [dataUri],
@@ -139,7 +191,7 @@ export async function POST(request: NextRequest) {
       
       console.log('Replicate response received:', Array.isArray(output) ? `${output.length} results` : typeof output)
 
-      // 10. 处理Replicate结果
+      // 11. 处理Replicate结果
       let replicateImageUrl: string
       
       if (output && typeof output === 'object' && 'url' in output) {
@@ -159,7 +211,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // 11. 下载生成的图片并上传到公开桶
+      // 12. 下载生成的图片并上传到公开桶
       const generatedBlob = await downloadFileAsBlob(replicateImageUrl)
       if (!generatedBlob) {
         await updateGeneration(generation.id, {
@@ -191,7 +243,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // 12. 更新数据库记录为完成状态
+      // 13. 更新数据库记录为完成状态
       const { generation: finalGeneration, error: finalUpdateError } = await updateGeneration(generation.id, {
         generated_image_url: generatedImageUrl,
         status: 'completed',
@@ -205,7 +257,7 @@ export async function POST(request: NextRequest) {
 
       console.log(`Generation completed successfully: ${generation.id}`)
 
-      // 13. 返回成功结果
+      // 14. 返回成功结果
       return NextResponse.json({
         success: true,
         generationId: generation.id,

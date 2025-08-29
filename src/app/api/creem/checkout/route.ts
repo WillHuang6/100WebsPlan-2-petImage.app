@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     const successUrl = process.env.SUCCESS_URL || 'https://100-webs-plan-2-pet-image-app.vercel.app/account';
     
     console.log('API Key 是否存在:', !!apiKey);
+    console.log('API Key 前缀:', apiKey?.substring(0, 15) + '...');
     console.log('成功URL:', successUrl);
 
     if (!apiKey) {

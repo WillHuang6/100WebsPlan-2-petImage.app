@@ -1,5 +1,7 @@
 -- ================================================
 -- 模板系统数据库迁移脚本
+-- 注意：执行前需要先创建 'template-examples' Storage Bucket (public)
+-- 并上传示例图片到该bucket
 -- ================================================
 
 -- 1. 创建模板表
@@ -23,7 +25,12 @@ CREATE INDEX IF NOT EXISTS idx_templates_active_sort ON templates (is_active, so
 CREATE INDEX IF NOT EXISTS idx_templates_key ON templates (template_key);
 CREATE INDEX IF NOT EXISTS idx_templates_themes ON templates USING GIN (themes);
 
--- 3. 插入现有模板数据
+-- 3. 创建 Storage Bucket (需要在 Supabase Dashboard 中手动创建)
+-- Bucket名称: template-examples
+-- 设置为 Public
+-- 允许的文件类型: image/jpeg, image/png, image/webp
+
+-- 4. 插入现有模板数据 (使用 Supabase Storage URLs)
 INSERT INTO templates (template_key, name, description, prompt, example_image_url, aspect_ratio, themes, sort_order) VALUES
 (
   'birthday-cake',

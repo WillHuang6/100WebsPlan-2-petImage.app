@@ -80,19 +80,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   return (
     <section className={cn("", className)}>
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 flex items-center justify-center">
-            <span className="text-white text-sm">🎨</span>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800">
-            Make Pet Art
-          </h2>
-        </div>
-        <p className="text-gray-600">
-          Upload a photo to start creating
-        </p>
-      </div>
       
       <div>
         {!selectedImage ? (

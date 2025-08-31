@@ -24,4 +24,36 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Hide scrollbar for theme selector */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
+
+  /* Line clamp utility for template descriptions */
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* Custom animation for selection */
+@keyframes selection-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.selection-pulse {
+  animation: selection-pulse 0.3s ease-in-out;
 }

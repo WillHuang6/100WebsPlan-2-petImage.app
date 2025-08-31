@@ -5,6 +5,14 @@ export interface Template {
   prompt: string
   exampleImageUrl: string
   aspectRatio: '3:4' // 后续可扩展为 '1:1' | '3:4' | '16:9' 等
+  themes: string[] // 主题标签数组
+}
+
+export interface Theme {
+  id: string
+  name: string
+  icon?: string
+  count?: number
 }
 
 // ===================================================================

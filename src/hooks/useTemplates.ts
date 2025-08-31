@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Template, DEFAULT_TEMPLATE_ID } from '@/config/templates'
+import { Template, Theme, DEFAULT_TEMPLATE_ID } from '@/config/templates'
 
 export const useTemplates = () => {
   const [templates, setTemplates] = useState<Template[]>([])
+  const [themes, setThemes] = useState<Theme[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -30,7 +32,10 @@ export const useTemplates = () => {
         }
 
         const availableTemplates = data.templates as Template[]
+        const availableThemes = data.themes as Theme[] || []
+        
         setTemplates(availableTemplates)
+        setThemes(availableThemes)
         
         // 默认选择指定模板，如果不存在则选择第一个
         let defaultTemplate = availableTemplates.find(t => t.id === DEFAULT_TEMPLATE_ID)
@@ -47,7 +52,9 @@ export const useTemplates = () => {
         console.error('Failed to load templates:', error)
         setError(error.message || 'Failed to load templates')
         setTemplates([])
+        setThemes([])
         setSelectedTemplate(null)
+        setSelectedTheme(null)
       } finally {
         setIsLoading(false)
       }
@@ -63,16 +70,24 @@ export const useTemplates = () => {
     }
   }
 
+  const selectTheme = (themeId: string) => {
+    setSelectedTheme(themeId || null)
+  }
+
   const clearSelection = () => {
     setSelectedTemplate(null)
+    setSelectedTheme(null)
   }
 
   return {
     templates,
+    themes,
     selectedTemplate,
+    selectedTheme,
     isLoading,
     error,
     selectTemplate,
+    selectTheme,
     clearSelection,
     hasTemplates: templates.length > 0
   }

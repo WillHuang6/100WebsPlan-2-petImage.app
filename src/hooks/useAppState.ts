@@ -26,9 +26,12 @@ export const useAppState = () => {
   // 使用模板管理hook
   const {
     templates,
+    themes,
     selectedTemplate,
+    selectedTheme,
     isLoading: templatesLoading,
     selectTemplate,
+    selectTheme,
     clearSelection: clearTemplateSelection
   } = useTemplates()
 
@@ -96,6 +99,12 @@ export const useAppState = () => {
     clearError()
   }, [selectTemplate, clearResult, clearError])
 
+  // 处理主题选择
+  const handleThemeSelect = useCallback((themeId: string) => {
+    selectTheme(themeId)
+    // 主题切换时不需要清除选中的模板和结果
+  }, [selectTheme])
+
   // 开始生成
   const handleStartGeneration = useCallback(async () => {
     if (!selectedTemplate || !selectedImage) {
@@ -136,7 +145,9 @@ export const useAppState = () => {
   return {
     // 状态
     templates,
+    themes,
     selectedTemplate,
+    selectedTheme,
     selectedImage,
     currentStep,
     templatesLoading,
@@ -153,6 +164,7 @@ export const useAppState = () => {
     
     // 操作方法
     handleTemplateSelect,
+    handleThemeSelect,
     handleImageSelect,
     handleImageClear,
     handleStartGeneration,

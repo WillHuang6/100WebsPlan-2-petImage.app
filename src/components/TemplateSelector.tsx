@@ -1,33 +1,74 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { Template } from '@/config/templates'
+import { Template, Theme } from '@/config/templates'
+import ThemeSelector from './ThemeSelector'
 
 interface TemplateSelectorProps {
   templates: Template[]
+  themes: Theme[]
   selectedTemplate: Template | null
+  selectedTheme: string | null
   onTemplateSelect: (templateId: string) => void
+  onThemeSelect: (themeId: string) => void
   isLoading?: boolean
 }
 
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   templates,
+  themes,
   selectedTemplate,
+  selectedTheme,
   onTemplateSelect,
+  onThemeSelect,
   isLoading = false
 }) => {
+  // Filter templates based on selected theme
+  const filteredTemplates = useMemo(() => {
+    if (!selectedTheme || selectedTheme === '') {
+      return templates
+    }
+    
+    return templates.filter(template => 
+      template.themes.some(theme => 
+        theme.toLowerCase() === selectedTheme.toLowerCase()
+      )
+    )
+  }, [templates, selectedTheme])
   if (isLoading) {
     return (
-      <section className="mb-8">
-        <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center">
-          Choose a Style
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-          {[1, 2, 3].map((i) => (
+      <section className="w-full">
+        {/* Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            🎨 Pick a Style
+          </h2>
+          <p className="text-gray-600">
+            Turn your pet photo into art with your favorite look
+          </p>
+        </div>
+        
+        {/* Theme selector skeleton */}
+        <div className="mb-6">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="flex-shrink-0 animate-pulse bg-gray-200 rounded-lg px-4 py-2 h-10 w-20"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Templates grid skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="animate-pulse">
-              <div className="bg-gray-200 rounded-lg h-64"></div>
+              <div className="bg-gray-200 rounded-lg aspect-[4/5] mb-2"></div>
+              <div className="bg-gray-200 rounded h-4 mb-1"></div>
+              <div className="bg-gray-200 rounded h-3 w-3/4"></div>
             </div>
           ))}
         </div>
@@ -37,10 +78,15 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   if (templates.length === 0) {
     return (
-      <section className="mb-8">
-        <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center">
-          Choose a Style
-        </h2>
+      <section className="w-full">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            🎨 Pick a Style
+          </h2>
+          <p className="text-gray-600">
+            Turn your pet photo into art with your favorite look
+          </p>
+        </div>
         <div className="text-center py-12">
           <p className="text-gray-500">No templates available at the moment.</p>
         </div>
@@ -49,7 +95,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   }
 
   return (
-    <section>
+    <section className="w-full">
+      {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
           🎨 Pick a Style
@@ -58,61 +105,64 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           Turn your pet photo into art with your favorite look
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        {templates.map((template) => {
+
+      {/* Theme Selector */}
+      <div className="mb-6">
+        <ThemeSelector
+          themes={themes}
+          selectedTheme={selectedTheme}
+          onThemeSelect={onThemeSelect}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* Templates Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+        {filteredTemplates.map((template) => {
           const isSelected = selectedTemplate?.id === template.id
           
           return (
             <Card
               key={template.id}
               className={cn(
-                'cursor-pointer transition-all duration-200 hover:shadow-lg',
+                'cursor-pointer transition-all duration-200 hover:shadow-lg relative overflow-hidden',
                 isSelected 
-                  ? 'ring-2 ring-blue-500 shadow-lg bg-blue-50' 
-                  : 'hover:shadow-md'
+                  ? 'ring-2 ring-orange-500 shadow-lg' 
+                  : 'hover:shadow-md border border-gray-200'
               )}
               onClick={() => onTemplateSelect(template.id)}
             >
-              <CardContent className="p-4">
-                {/* 模板预览图 */}
-                <div className="relative mb-3 aspect-square rounded-lg overflow-hidden bg-gray-100">
+              <CardContent className="p-0">
+                {/* Template Preview Image */}
+                <div className="relative aspect-[4/5] bg-gray-100">
                   <img 
-                    src={`/images/examples/${
-                      template.id === 'birthday-cake' ? 'birthday-cake.jpg' :
-                      template.id === 'birthday-cake-side' ? 'birthday-cake-side.jpg' :
-                      template.id === 'balloon-bright' ? 'balloon-bright.jpg' :
-                      template.id === 'pet-figure' ? 'pet-figure.jpg' : 
-                      'placeholder.jpg'
-                    }`}
+                    src={template.exampleImageUrl}
                     alt={`${template.name} example`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <p className="text-xs font-medium text-white drop-shadow-lg">
-                      {template.id === 'birthday-cake' ? '🎂 生日庆祝' :
-                       template.id === 'birthday-cake-side' ? '🕯️ 烛光氛围' :
-                       template.id === 'balloon-bright' ? '🎈 气球派对' :
-                       template.id === 'pet-figure' ? '🎮 3D手办' : 'Preview'}
-                    </p>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                   
-                  {/* 选中指示器 */}
+                  {/* Selected indicator */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                   )}
+                  
+                  {/* Template name overlay */}
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <h3 className="text-sm font-semibold text-white drop-shadow-lg">
+                      {template.name}
+                    </h3>
+                  </div>
                 </div>
                 
-                {/* 模板信息 */}
-                <div className="text-center">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {template.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 leading-relaxed">
+                {/* Template description */}
+                <div className="p-3">
+                  <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
                     {template.description}
                   </p>
                 </div>
@@ -121,11 +171,19 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           )
         })}
       </div>
+
+      {/* No templates message when filtered */}
+      {filteredTemplates.length === 0 && selectedTheme && (
+        <div className="text-center py-12">
+          <p className="text-gray-500">No templates found for the selected theme.</p>
+        </div>
+      )}
       
+      {/* Selected template indicator */}
       {selectedTemplate && (
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Selected: <span className="font-medium text-blue-600">{selectedTemplate.name}</span>
+            Selected: <span className="font-medium text-orange-600">{selectedTemplate.name}</span>
           </p>
         </div>
       )}

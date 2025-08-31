@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTemplateById } from '@/config/templates'
+import { getTemplateByKeyFromDatabase } from '@/lib/templates'
 import { validateImageFile } from '@/lib/imageUtils'
 import { requireAuth } from '@/lib/auth-server'
 import { createGeneration, updateGeneration, generateShareToken } from '@/lib/database'
@@ -37,9 +37,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 检查模板是否存在
-    const template = getTemplateById(templateId)
-    if (!template) {
-      return NextResponse.json({ message: 'Template not found' }, { status: 404 })
+    const { template, error: templateError } = await getTemplateByKeyFromDatabase(templateId)
+    if (templateError || !template) {
+      return NextResponse.json(
+        { message: templateError || 'Template not found' },
+        { status: 404 }
+      )
     }
 
     // 4. 验证图片文件

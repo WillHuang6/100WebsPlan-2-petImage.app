@@ -152,19 +152,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     </div>
                   )}
                   
-                  {/* Template name overlay */}
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="text-sm font-semibold text-white drop-shadow-lg">
-                      {template.name}
-                    </h3>
-                  </div>
                 </div>
                 
-                {/* Template description */}
+                {/* Template name at bottom */}
                 <div className="p-3">
-                  <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-                    {template.description}
-                  </p>
+                  <h3 className="text-sm font-medium text-gray-900 text-center">
+                    {template.name}
+                  </h3>
                 </div>
               </CardContent>
             </Card>

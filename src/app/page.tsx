@@ -183,6 +183,7 @@ export default function Home() {
                             onImageSelect={handleImageSelect}
                             selectedImage={selectedImage}
                             isDisabled={isGenerating}
+                            onImageClear={handleImageClear}
                           />
                           
                           <GenerateButton

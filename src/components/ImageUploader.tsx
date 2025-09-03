@@ -11,6 +11,7 @@ interface ImageUploaderProps {
   selectedImage: File | null
   isDisabled?: boolean
   className?: string
+  onImageClear?: () => void
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -23,7 +24,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageSelect,
   selectedImage,
   isDisabled = false,
-  className
+  className,
+  onImageClear
 }) => {
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -133,61 +135,37 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           </Card>
         ) : (
           <Card className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                {/* Image Preview */}
-                <div className="flex-shrink-0">
-                  {previewUrl && (
-                    <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-100">
-                      <img 
-                        src={previewUrl} 
-                        alt="Pet photo preview"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
-                
-                {/* File Info */}
-                <div className="flex-grow min-w-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-medium text-gray-900 truncate">
-                      {selectedImage.name}
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearImage}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </Button>
+            <CardContent className="p-4">
+              {/* Image Preview - Centered and Full Display */}
+              <div className="mb-4">
+                {previewUrl && (
+                  <div className="w-full aspect-[3/4] rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <img 
+                      src={previewUrl} 
+                      alt="Pet photo preview"
+                      className="max-w-full max-h-full object-contain"
+                    />
                   </div>
-                  
-                  <div className="space-y-1 text-sm text-gray-500">
-                    <p>Size: {formatFileSize(selectedImage.size)}</p>
-                    <p>Type: {selectedImage.type}</p>
-                  </div>
-                  
-                  <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Ready to generate
-                  </div>
-                </div>
+                )}
               </div>
               
-              {/* Upload Another Button */}
-              <div className="mt-6 pt-6 border-t">
+              {/* Cancel Button */}
+              <div className="mt-4">
                 <Button
                   variant="outline"
                   onClick={() => {
-                    clearImage()
+                    if (previewUrl) {
+                      URL.revokeObjectURL(previewUrl)
+                      setPreviewUrl(null)
+                    }
+                    setError(null)
+                    if (onImageClear) {
+                      onImageClear()
+                    }
                   }}
                   className="w-full"
                 >
-                  Upload a Different Photo
+                  Cancel
                 </Button>
               </div>
             </CardContent>

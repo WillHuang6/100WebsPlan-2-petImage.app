@@ -132,9 +132,9 @@ export default function Home() {
 
               {/* 功能区域 */}
               <div className="max-w-6xl mx-auto">
-                <div className="flex flex-col lg:grid lg:grid-cols-10 gap-6 lg:gap-8">
-                  {/* Left side - Template Selection (6/10 width) */}
-                  <div className="lg:col-span-6 order-2 lg:order-1">
+                <div className="flex flex-col lg:grid lg:grid-cols-14 gap-6 lg:gap-8">
+                  {/* Left side - Template Selection (10.5/14 width = 75% vs original 75%, 10% increase) */}
+                  <div className="lg:col-span-10 order-2 lg:order-1">
                     <div className="rounded-2xl p-6 shadow-2xl min-h-[500px] lg:min-h-[600px] relative overflow-hidden" style={{
                       backgroundColor: 'rgba(255, 248, 240, 0.95)',
                       backdropFilter: 'blur(12px)',
@@ -156,7 +156,7 @@ export default function Home() {
                     </div>
                   </div>
                   
-                  {/* Right side - Image Upload and Generate (4/10 width) */}
+                  {/* Right side - Image Upload and Generate (4/14 width = ~28.5% vs original 25%, 10% increase) */}
                   <div className="lg:col-span-4 order-1 lg:order-2">
                     <div className="rounded-2xl p-6 shadow-2xl min-h-[400px] lg:min-h-[600px] flex flex-col relative overflow-hidden" style={{
                       backgroundColor: 'rgba(255, 248, 240, 0.95)',

@@ -74,8 +74,8 @@ export const Navigation: React.FC = () => {
                 style={{ 
                   color: '#8B4513',
                 }}
-                onMouseEnter={(e) => e.target.style.color = '#F2994A'}
-                onMouseLeave={(e) => e.target.style.color = '#8B4513'}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#F2994A'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#8B4513'}
               >
                 Features
               </Link>
@@ -85,8 +85,8 @@ export const Navigation: React.FC = () => {
                 style={{ 
                   color: '#8B4513',
                 }}
-                onMouseEnter={(e) => e.target.style.color = '#F2994A'}
-                onMouseLeave={(e) => e.target.style.color = '#8B4513'}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#F2994A'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#8B4513'}
               >
                 Pricing
               </Link>
@@ -96,8 +96,8 @@ export const Navigation: React.FC = () => {
                 style={{ 
                   color: '#8B4513',
                 }}
-                onMouseEnter={(e) => e.target.style.color = '#F2994A'}
-                onMouseLeave={(e) => e.target.style.color = '#8B4513'}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#F2994A'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#8B4513'}
               >
                 FAQs
               </Link>
@@ -108,8 +108,8 @@ export const Navigation: React.FC = () => {
                   style={{ 
                     color: '#8B4513',
                   }}
-                  onMouseEnter={(e) => e.target.style.color = '#F2994A'}
-                  onMouseLeave={(e) => e.target.style.color = '#8B4513'}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#F2994A'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#8B4513'}
                 >
                   My Artworks History
                 </Link>
@@ -130,12 +130,12 @@ export const Navigation: React.FC = () => {
                     color: '#8B4513',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = '#F2994A'
-                    e.currentTarget.style.backgroundColor = 'rgba(242, 153, 74, 0.1)'
+                    (e.currentTarget as HTMLElement).style.color = '#F2994A';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(242, 153, 74, 0.1)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = '#8B4513'
-                    e.currentTarget.style.backgroundColor = 'transparent'
+                    (e.currentTarget as HTMLElement).style.color = '#8B4513';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'
                   }}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,12 +214,12 @@ export const Navigation: React.FC = () => {
                     color: '#8B4513',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = '#F2994A'
-                    e.currentTarget.style.backgroundColor = 'rgba(242, 153, 74, 0.1)'
+                    (e.currentTarget as HTMLElement).style.color = '#F2994A';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(242, 153, 74, 0.1)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = '#8B4513'
-                    e.currentTarget.style.backgroundColor = 'transparent'
+                    (e.currentTarget as HTMLElement).style.color = '#8B4513';
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'
                   }}
                 >
                   Sign In
@@ -232,10 +232,10 @@ export const Navigation: React.FC = () => {
                     background: 'linear-gradient(135deg, #F2994A, #E17055)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #E17055, #D2691E)'
+                    (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #E17055, #D2691E)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #F2994A, #E17055)'
+                    (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #F2994A, #E17055)'
                   }}
                 >
                   Get Started

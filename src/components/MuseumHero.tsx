@@ -7,6 +7,16 @@ interface MuseumHeroProps {
   children: React.ReactNode
 }
 
+interface ImagePosition {
+  src: string
+  size: string
+  rotate: string
+  top?: string
+  bottom?: string
+  left?: string
+  right?: string
+}
+
 const MuseumHero: React.FC<MuseumHeroProps> = ({ children }) => {
   // 选择10张代表性图片用于博物馆展示
   const galleryImages = [
@@ -23,7 +33,7 @@ const MuseumHero: React.FC<MuseumHeroProps> = ({ children }) => {
   ]
 
   // 桌面端图片位置（只保留顶部5张）
-  const desktopImagePositions = [
+  const desktopImagePositions: ImagePosition[] = [
     // 左上区域 
     { src: galleryImages[0], size: 'large', top: '8%', left: '5%', rotate: '-3deg' },
     { src: galleryImages[1], size: 'medium', top: '15%', left: '20%', rotate: '2deg' },
@@ -35,7 +45,7 @@ const MuseumHero: React.FC<MuseumHeroProps> = ({ children }) => {
   ]
 
   // 移动端简化布局（只保留顶部3张）
-  const mobileImagePositions = [
+  const mobileImagePositions: ImagePosition[] = [
     { src: galleryImages[0], size: 'medium', top: '10%', left: '8%', rotate: '-2deg' },
     { src: galleryImages[1], size: 'small', top: '8%', right: '10%', rotate: '2deg' },
     { src: galleryImages[2], size: 'medium', top: '15%', left: '25%', rotate: '1deg' },

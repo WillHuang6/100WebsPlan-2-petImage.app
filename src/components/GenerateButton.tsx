@@ -55,9 +55,9 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   }
   const getButtonText = () => {
     if (isLoading) {
-      return `Generating... ${Math.round(loadingProgress)}%`
+      return `Creating... ${Math.round(loadingProgress)}%`
     }
-    return 'Generate AI Image ✨'
+    return 'Create ✨'
   }
 
   const getButtonIcon = () => {
@@ -83,12 +83,26 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
           disabled={isDisabled || isLoading}
           size="lg"
           className={cn(
-            "w-full text-lg font-medium transition-all duration-200",
-            "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700",
+            "w-full text-lg font-medium transition-all duration-200 text-white",
             "shadow-lg hover:shadow-xl",
             isLoading && "cursor-not-allowed",
             isDisabled && "opacity-50 cursor-not-allowed"
           )}
+          style={{
+            background: isDisabled || isLoading ? 
+              'linear-gradient(135deg, #D2691E, #CD853F)' : 
+              'linear-gradient(135deg, #F2994A, #E17055)'
+          }}
+          onMouseEnter={(e) => {
+            if (!isDisabled && !isLoading) {
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #E17055, #D2691E)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isDisabled && !isLoading) {
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, #F2994A, #E17055)'
+            }
+          }}
         >
           {getButtonIcon()}
           {getButtonText()}
@@ -99,8 +113,11 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
           <div className="mt-4">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${loadingProgress}%` }}
+                className="h-2 rounded-full transition-all duration-300 ease-out"
+                style={{ 
+                  width: `${loadingProgress}%`,
+                  background: 'linear-gradient(135deg, #F2994A, #E17055)'
+                }}
               />
             </div>
             <div className="mt-2 text-sm text-gray-600">

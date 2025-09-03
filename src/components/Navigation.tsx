@@ -6,18 +6,10 @@ import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { useApp } from '@/contexts/AppContext'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 export const Navigation: React.FC = () => {
   const { user, signOut } = useAuth()
   const { openAuthModal } = useApp()
-  const [language, setLanguage] = useState('中文')
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
   const handleSignOut = async () => {
@@ -119,44 +111,6 @@ export const Navigation: React.FC = () => {
 
           {/* 右侧工具栏 */}
           <div className="flex items-center space-x-4">
-            {/* 语言选择器 */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="transition-colors"
-                  style={{
-                    color: '#8B4513',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = '#F2994A';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(242, 153, 74, 0.1)'
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = '#8B4513';
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'
-                  }}
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21L6.8 10.6a11.05 11.05 0 005.6 5.6l1.213-3.424a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  {language}
-                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
-                <DropdownMenuItem onClick={() => setLanguage('中文')}>
-                  🇨🇳 中文
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('English')}>
-                  🇺🇸 English
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* 用户账户区域 */}
             {user ? (
               <div className="relative">

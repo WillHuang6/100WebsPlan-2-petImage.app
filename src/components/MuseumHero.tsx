@@ -66,7 +66,7 @@ const MuseumHero: React.FC<MuseumHeroProps> = ({ children }) => {
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ 
-      background: 'linear-gradient(135deg, #FFF8F0 0%, #FFEAA7 20%, #F2994A 40%, #FDEBD0 60%, #FFF5E6 100%)' 
+      background: 'linear-gradient(135deg, #FFF8F0 0%, #FFEAA7 20%, #F2994A 40%, #FEFBF3 60%, #FFFCF7 100%)' 
     }}>
       {/* 博物馆背景纹理 */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,69,19,0.03)_1px,transparent_1px)] [background-size:24px_24px]" />

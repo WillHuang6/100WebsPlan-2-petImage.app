@@ -38,20 +38,20 @@ export default function ThemeSelector({
 
   return (
     <div className="w-full">
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
         {/* All Themes button */}
         <Button
           variant={selectedTheme === null ? "default" : "outline"}
           size="sm"
           onClick={() => onThemeSelect('')}
-          className={`flex-shrink-0 transition-all duration-200 ${
+          className={`flex-shrink-0 transition-all duration-200 min-w-0 px-2.5 py-1.5 text-xs ${
             selectedTheme === null
               ? 'bg-orange-500 hover:bg-orange-600 text-white'
               : 'hover:bg-gray-100 border-gray-200'
           }`}
         >
           <span className="mr-1">🎨</span>
-          All
+          <span className="whitespace-nowrap">All</span>
         </Button>
 
         {/* Theme buttons */}
@@ -61,16 +61,16 @@ export default function ThemeSelector({
             variant={selectedTheme === theme.id ? "default" : "outline"}
             size="sm"
             onClick={() => onThemeSelect(theme.id)}
-            className={`flex-shrink-0 transition-all duration-200 ${
+            className={`flex-shrink-0 transition-all duration-200 min-w-0 px-2.5 py-1.5 text-xs ${
               selectedTheme === theme.id
                 ? 'bg-orange-500 hover:bg-orange-600 text-white'
                 : 'hover:bg-gray-100 border-gray-200'
             }`}
           >
             {theme.icon && <span className="mr-1">{theme.icon}</span>}
-            <span>{theme.name}</span>
+            <span className="whitespace-nowrap">{theme.name}</span>
             {theme.count && (
-              <span className="ml-1 text-xs opacity-75">({theme.count})</span>
+              <span className="ml-1 text-xs opacity-75 whitespace-nowrap">({theme.count})</span>
             )}
           </Button>
         ))}

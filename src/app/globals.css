@@ -42,6 +42,11 @@ body {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
+  
+  /* Radial gradient utility for hero spotlight effect */
+  .bg-gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
+  }
 }
 
 /* Custom animation for selection */

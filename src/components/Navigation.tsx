@@ -37,14 +37,19 @@ export const Navigation: React.FC = () => {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm shadow-sm" style={{
+      backgroundColor: 'rgba(255, 248, 240, 0.95)',
+      borderBottom: '1px solid rgba(242, 153, 74, 0.2)'
+    }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* 左侧 Logo 和导航 */}
           <div className="flex items-center space-x-8">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-rose-500 to-pink-500 p-0.5">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden p-0.5" style={{
+                background: 'linear-gradient(135deg, #F2994A, #E17055)'
+              }}>
                 <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
                   <Image
                     src="/images/logo.png"
@@ -56,8 +61,8 @@ export const Navigation: React.FC = () => {
                 </div>
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-gray-900">PetImage</span>
-                <span className="text-xs text-gray-500 -mt-1">AI Pet Art Generator</span>
+                <span className="text-xl font-bold" style={{ color: '#F2994A' }}>PetImage</span>
+                <span className="text-xs -mt-1" style={{ color: '#8B4513' }}>AI Pet Art Generator</span>
               </div>
             </Link>
 
@@ -65,26 +70,46 @@ export const Navigation: React.FC = () => {
             <div className="hidden md:flex items-center space-x-6">
               <Link 
                 href="/" 
-                className="text-gray-700 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{ 
+                  color: '#8B4513',
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#F2994A'}
+                onMouseLeave={(e) => e.target.style.color = '#8B4513'}
               >
                 Features
               </Link>
               <Link 
                 href="/pricing" 
-                className="text-gray-700 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{ 
+                  color: '#8B4513',
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#F2994A'}
+                onMouseLeave={(e) => e.target.style.color = '#8B4513'}
               >
                 Pricing
               </Link>
               <Link 
                 href="/faq" 
-                className="text-gray-700 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{ 
+                  color: '#8B4513',
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#F2994A'}
+                onMouseLeave={(e) => e.target.style.color = '#8B4513'}
               >
                 FAQs
               </Link>
               {user && (
                 <Link 
                   href="/history" 
-                  className="text-gray-700 hover:text-rose-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  style={{ 
+                    color: '#8B4513',
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#F2994A'}
+                  onMouseLeave={(e) => e.target.style.color = '#8B4513'}
                 >
                   My Artworks History
                 </Link>
@@ -100,7 +125,18 @@ export const Navigation: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-700 hover:text-rose-600 hover:bg-rose-50"
+                  className="transition-colors"
+                  style={{
+                    color: '#8B4513',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#F2994A'
+                    e.currentTarget.style.backgroundColor = 'rgba(242, 153, 74, 0.1)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#8B4513'
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21L6.8 10.6a11.05 11.05 0 005.6 5.6l1.213-3.424a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -173,14 +209,34 @@ export const Navigation: React.FC = () => {
                   variant="ghost" 
                   size="sm" 
                   onClick={handleAuthClick}
-                  className="text-gray-700 hover:text-rose-600 hover:bg-rose-50"
+                  className="transition-colors"
+                  style={{
+                    color: '#8B4513',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#F2994A'
+                    e.currentTarget.style.backgroundColor = 'rgba(242, 153, 74, 0.1)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#8B4513'
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
                 >
                   Sign In
                 </Button>
                 <Button 
                   size="sm" 
                   onClick={handleAuthClick}
-                  className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white"
+                  className="text-white font-semibold"
+                  style={{
+                    background: 'linear-gradient(135deg, #F2994A, #E17055)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #E17055, #D2691E)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #F2994A, #E17055)'
+                  }}
                 >
                   Get Started
                 </Button>

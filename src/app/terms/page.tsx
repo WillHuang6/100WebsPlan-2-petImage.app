@@ -4,90 +4,90 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">服务条款</h1>
-            <p className="text-gray-600">生效日期：2024年8月28日</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Terms of Service</h1>
+            <p className="text-gray-600">Effective Date: August 28, 2024</p>
           </div>
 
           <div className="prose max-w-none">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">1. 接受条款</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">1. Acceptance of Terms</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              欢迎使用 PetImage AI 宠物艺术生成服务。通过访问和使用我们的服务，您同意遵守本服务条款。如果您不同意这些条款，请不要使用我们的服务。
+              Welcome to PetImage AI pet art generation service. By accessing and using our service, you agree to abide by these Terms of Service. If you do not agree to these terms, please do not use our service.
             </p>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">2. 服务描述</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">2. Service Description</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              PetImage 是一个基于人工智能的在线服务，允许用户上传宠物照片并生成艺术风格的图像。我们使用先进的AI技术来创建独特的艺术作品。
+              PetImage is an AI-powered online service that allows users to upload pet photos and generate artistic-style images. We use advanced AI technology to create unique works of art.
             </p>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">3. 用户账户</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">3. User Accounts</h2>
             <ul className="mb-6 text-gray-700 leading-relaxed list-disc pl-6 space-y-2">
-              <li>您需要提供准确、完整的注册信息</li>
-              <li>您有责任保护账户安全和密码</li>
-              <li>一个人只能拥有一个账户</li>
-              <li>我们有权在违反条款时暂停或终止账户</li>
+              <li>You must provide accurate and complete registration information</li>
+              <li>You are responsible for protecting account security and passwords</li>
+              <li>One person may only have one account</li>
+              <li>We have the right to suspend or terminate accounts for violation of terms</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">4. 使用限制</h2>
-            <p className="mb-4 text-gray-700 leading-relaxed">您同意不会：</p>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">4. Usage Restrictions</h2>
+            <p className="mb-4 text-gray-700 leading-relaxed">You agree not to:</p>
             <ul className="mb-6 text-gray-700 leading-relaxed list-disc pl-6 space-y-2">
-              <li>上传包含暴力、色情或其他不当内容的图像</li>
-              <li>侵犯他人的知识产权或隐私权</li>
-              <li>尝试破坏或干扰服务的正常运行</li>
-              <li>使用自动化工具大量生成内容</li>
-              <li>将服务用于商业目的（除非另有约定）</li>
+              <li>Upload images containing violence, pornography, or other inappropriate content</li>
+              <li>Infringe on others' intellectual property or privacy rights</li>
+              <li>Attempt to damage or interfere with normal service operation</li>
+              <li>Use automated tools to generate content in bulk</li>
+              <li>Use the service for commercial purposes (unless otherwise agreed)</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">5. 知识产权</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">5. Intellectual Property</h2>
             <ul className="mb-6 text-gray-700 leading-relaxed list-disc pl-6 space-y-2">
-              <li>您保留对原始上传图像的所有权利</li>
-              <li>生成的AI艺术图像的使用权归您所有</li>
-              <li>我们的技术、软件和服务受知识产权法保护</li>
-              <li>未经许可，您不得复制或分发我们的技术</li>
+              <li>You retain all rights to your original uploaded images</li>
+              <li>Usage rights to AI-generated artistic images belong to you</li>
+              <li>Our technology, software, and services are protected by intellectual property laws</li>
+              <li>You may not copy or distribute our technology without permission</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">6. 付费服务</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">6. Paid Services</h2>
             <ul className="mb-6 text-gray-700 leading-relaxed list-disc pl-6 space-y-2">
-              <li>某些功能可能需要付费使用</li>
-              <li>付费用户享有更多生成次数和高级功能</li>
-              <li>订阅费用按月收取，可随时取消</li>
-              <li>我们保留调整价格的权利，但会提前通知</li>
+              <li>Some features may require payment to use</li>
+              <li>Paid users enjoy more generation credits and advanced features</li>
+              <li>Subscription fees are charged monthly and can be cancelled at any time</li>
+              <li>We reserve the right to adjust prices, but will provide advance notice</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">7. 数据和隐私</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">7. Data and Privacy</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              我们重视您的隐私。上传的图像仅用于AI处理，处理完成后会在7天内自动删除。详细信息请查看我们的隐私政策。
+              We value your privacy. Uploaded images are used only for AI processing and will be automatically deleted within 7 days after processing. For detailed information, please see our Privacy Policy.
             </p>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">8. 服务可用性</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">8. Service Availability</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              我们努力保持服务的稳定运行，但不保证服务100%可用。我们可能需要进行维护、更新或因技术原因暂时中断服务。
+              We strive to maintain stable service operation, but do not guarantee 100% service availability. We may need to perform maintenance, updates, or temporarily interrupt service for technical reasons.
             </p>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">9. 免责声明</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">9. Disclaimer</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              本服务"按现状"提供，我们不对服务的准确性、可靠性或适用性提供任何明示或暗示的保证。使用服务的风险由您自行承担。
+              This service is provided "as is," and we do not provide any express or implied warranties regarding the accuracy, reliability, or suitability of the service. You use the service at your own risk.
             </p>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">10. 责任限制</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">10. Limitation of Liability</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              在法律允许的最大范围内，我们对因使用服务而产生的任何直接、间接、偶然或后果性损害不承担责任。
+              To the maximum extent permitted by law, we shall not be liable for any direct, indirect, incidental, or consequential damages arising from the use of the service.
             </p>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">11. 条款修改</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">11. Terms Modification</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              我们可能会不时更新这些条款。重大变更将通过网站通知或电子邮件告知用户。继续使用服务即表示您接受修改后的条款。
+              We may update these terms from time to time. Significant changes will be communicated to users through website notifications or email. Continued use of the service indicates your acceptance of the modified terms.
             </p>
 
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">12. 联系我们</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">12. Contact Us</h2>
             <p className="mb-6 text-gray-700 leading-relaxed">
-              如果您对这些服务条款有任何疑问，请通过以下方式联系我们：<br/>
-              邮箱：support@petimage.ai<br/>
-              网站：petimage.ai
+              If you have any questions about these Terms of Service, please contact us through the following means:<br/>
+              Email: support@petimage.ai<br/>
+              Website: petimage.ai
             </p>
 
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600">
-                本条款的最终解释权归 PetImage 所有。如有争议，应友好协商解决。
+                PetImage reserves the final interpretation rights of these terms. In case of disputes, they should be resolved through friendly consultation.
               </p>
             </div>
           </div>

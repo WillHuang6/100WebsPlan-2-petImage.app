@@ -6,6 +6,7 @@ export default function TermsPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Terms of Service</h1>
             <p className="text-gray-600">Effective Date: August 30, 2025</p>
+            <p className="text-gray-700 mt-4 font-medium">This service is provided by Huang Zhiwei</p>
           </div>
 
           <div className="prose max-w-none">
